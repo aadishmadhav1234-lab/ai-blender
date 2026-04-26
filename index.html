@@ -1,142 +1,128 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Collage Studio Pro</title>
+    <title>Collage Studio</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <style>
-        :root { --accent: #007AFF; --bg: #000; --card: rgba(28, 28, 30, 0.95); }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; height: 100vh; overflow: hidden; }
-        .tab { display: none; height: 100%; width: 100%; flex-direction: column; position: relative; }
+        :root { --accent: #007AFF; --bg: #000; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        input[type="file"] { display: none; }
+        
+        /* Navigation (Tabs) */
+        .tab { display: none; flex-direction: column; height: 100%; width: 100%; position: absolute; top: 0; left: 0; }
         .tab.active { display: flex; }
 
-        /* Screen 1: Welcome */
+        /* --- SCREEN 1: WELCOME --- */
         #screen-welcome { 
+            /* Kept the creative burst background you like */
             background: #000 url('image_8c0a32.jpg') no-repeat center center; 
-            background-size: cover; justify-content: center; align-items: center; 
+            background-size: cover; justify-content: flex-end; padding-bottom: 50px; 
+            align-items: center; /* Center buttons horizontally */
         }
-        .btn-img { width: 280px; cursor: pointer; transition: transform 0.1s; }
 
-        /* Screen 2: Layout */
-        #screen-layout { justify-content: center; align-items: center; background: #000; }
-        .opt-card { background: var(--card); padding: 30px; border-radius: 30px; text-align: center; border: 1px solid #333; width: 85%; }
-        .mode-btn { width: 100%; padding: 18px; margin: 10px 0; border-radius: 15px; border: 1px solid #444; background: #222; color: white; font-weight: bold; }
-
-        /* Screen 3: Editor */
-        .editor-top { height: 50px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; background: #1c1c1e; border-bottom: 1px solid #333; }
-        canvas { background: #111; touch-action: none; display: block; margin: auto; }
-        .dock { height: 110px; background: #1c1c1e; display: flex; flex-direction: column; border-top: 1px solid #333; }
-        .tool-row { display: flex; justify-content: space-around; padding: 10px; }
-        .tool { background: #333; border: none; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; }
-        input[type="file"], #colorIn { display: none; }
-
-        /* --- NEW EXPORT OVERLAY --- */
-        #export-overlay { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; padding-top: 40px;
+        /* NEW LARGE ADD PHOTOS BUTTON */
+        .large-add-btn {
+            background: linear-gradient(180deg, #3795FF 0%, #157FFB 100%);
+            border: 2px solid #55A8FF;
+            width: 80%;
+            height: 120px; /* Big button size */
+            border-radius: 60px;
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0,122,255,0.3);
+            margin-bottom: 20px;
+            transition: transform 0.1s;
         }
-        .export-header { font-weight: bold; margin-bottom: 20px; font-size: 20px; }
-        .action-box { width: 90%; display: flex; gap: 10px; margin-bottom: 20px; }
-        .act-btn { flex: 1; background: #2C2C2E; border: 1px solid #444; border-radius: 15px; padding: 15px 5px; color: #007AFF; font-size: 12px; font-weight: 600; text-align: center; }
-        #preview-img { width: 85%; border-radius: 10px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: contain; max-height: 60%; }
-        .close-export { position: absolute; top: 20px; right: 20px; color: #8e8e93; font-size: 24px; }
+        .large-add-btn:active { transform: scale(0.98); }
+
+        /* NEW STANDARD NEXT BUTTON */
+        .standard-next-btn {
+            background: linear-gradient(180deg, #CB2EFF 0%, #B200FB 100%);
+            border: 2px solid #DE6FFF;
+            width: 50%;
+            height: 50px;
+            border-radius: 25px;
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            display: none; /* Initially Hidden */
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+        .standard-next-btn:active { transform: scale(0.98); }
+
+        /* --- SCREEN 2: LAYOUT --- */
+        #screen-layout { justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
+        .layout-card { background: rgba(28, 28, 30, 0.8); backdrop-filter: blur(10px); padding: 30px; border-radius: 24px; text-align: center; border: 1px solid #333; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
+        .btn-m { padding: 15px; border-radius: 12px; border: 1px solid #555; background: #333; color: white; font-weight: 600; cursor: pointer; }
+
+        /* --- SCREEN 3: EDITOR --- */
+        #screen-editor { padding: 0; background: #111; }
+        .editor-top { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; background: rgba(0,0,0,0.8); border-bottom: 1px solid #222; }
+        canvas { touch-action: none; display: block; margin: auto; }
+        .editor-dock { position: absolute; bottom: 0; width: 100%; height: 90px; background: rgba(20,20,22,0.9); border-top: 1px solid #333; }
     </style>
 </head>
 <body>
 
     <div id="screen-welcome" class="tab active">
-        <label>
-            <img src="image_8c0689.jpg" class="btn-img">
+        <label class="large-add-btn">
+            Big Add Photos +
             <input type="file" id="fileIn" accept="image/*" multiple>
         </label>
-        <img src="image_8bb436.jpg" id="nextBtn" class="btn-img" style="display:none; width:220px; margin-top:25px;">
+        
+        <button id="nextBtn" class="standard-next-btn">Next</button>
     </div>
 
     <div id="screen-layout" class="tab">
-        <div class="opt-card">
-            <h2 style="margin-bottom:20px;">Choose Layout</h2>
-            <button class="mode-btn" onclick="buildCollage('P')">PORTRAIT (Vertical)</button>
-            <button class="mode-btn" onclick="buildCollage('L')">LANDSCAPE (Grid)</button>
+        <div class="layout-card">
+            <h2>Select Layout</h2>
+            <div class="grid-2">
+                <button class="btn-m" onclick="startEditor('P')">Portrait</button>
+                <button class="btn-m" onclick="startEditor('L')">Landscape</button>
+            </div>
         </div>
     </div>
 
     <div id="screen-editor" class="tab">
-        <div class="editor-top">
-            <button class="tool" onclick="undo()">↩ Undo</button>
-            <button class="tool" onclick="redo()">Redo ↪</button>
-            <button class="tool" onclick="showExport()" style="color:#34C759; font-weight:800;">EXPORT</button>
         </div>
-        <canvas id="cvs"></canvas>
-        <div class="dock">
-            <div class="tool-row">
-                <button class="tool" onclick="addTextBox()">+ TEXT</button>
-                <button class="tool" onclick="toggleStyle('bold')"><b>B</b></button>
-                <button class="tool" onclick="toggleStyle('italic')"><i>I</i></button>
-                <select id="fontFamily" class="tool" onchange="updateText()">
-                    <option value="Arial">Modern</option>
-                    <option value="Georgia">Classic</option>
-                    <option value="Impact">Impact</option>
-                </select>
-                <label class="tool" style="background:#444">🎨 <input type="color" id="colorIn" onchange="updateText()"></label>
-            </div>
-            <div class="tool-row">
-                <input type="range" id="fontSize" min="10" max="100" value="30" style="flex:1; margin: 0 10px;" oninput="updateText()">
-                <button class="tool" style="background:#FF3B30" onclick="deleteItem()">Delete</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="export-overlay">
-        <div class="close-export" onclick="this.parentElement.style.display='none'">✕</div>
-        <div class="export-header">Export Project</div>
-        
-        <div class="action-box">
-            <div class="act-btn" onclick="downloadImage()">⬇️<br>Download</div>
-            <div class="act-btn" onclick="saveToPhotos()">🖼️<br>Save Photos</div>
-            <div class="act-btn" onclick="shareImage()">📤<br>Share</div>
-        </div>
-
-        <p style="font-size:12px; color:#8E8E93; margin-bottom:10px;">Preview</p>
-        <img id="preview-img" src="">
-    </div>
 
 <script>
-    /* ... (All previous variable declarations, fileIn, nextBtn, undo/redo, buildCollage, and draw logic from previous turn) ... */
+    let rawFiles = [];
 
-    function showExport() {
-        const dataUrl = cvs.toDataURL("image/png");
-        document.getElementById('preview-img').src = dataUrl;
-        document.getElementById('export-overlay').style.display = 'flex';
-    }
-
-    function downloadImage() {
-        const link = document.createElement('a');
-        link.download = 'collage-studio.png';
-        link.href = cvs.toDataURL();
-        link.click();
-    }
-
-    function saveToPhotos() {
-        // Mobile browsers cannot force-save to gallery via JS for security.
-        // We instruct the user to use the native long-press feature.
-        alert("Long-press the preview image below and select 'Save to Photos'.");
-    }
-
-    async function shareImage() {
-        const blob = await (await fetch(cvs.toDataURL())).blob();
-        const file = new File([blob], 'collage.png', { type: blob.type });
-        
-        if (navigator.share) {
-            navigator.share({
-                files: [file],
-                title: 'My Collage',
-                text: 'Check out this collage I made!'
-            }).catch(console.error);
+    // FILE SELECTION LOGIC
+    document.getElementById('fileIn').onchange = (e) => {
+        rawFiles = Array.from(e.target.files);
+        if(rawFiles.length > 0) {
+            // FIX: Reveal the Next button only after files are picked
+            document.getElementById('nextBtn').style.display = 'flex';
         } else {
-            alert("Sharing is not supported on this browser version.");
+            document.getElementById('nextBtn').style.display = 'none';
         }
+    };
+
+    // NAVIGATION LOGIC
+    document.getElementById('nextBtn').onclick = () => {
+        setTab('screen-layout');
+    };
+
+    function setTab(tabId) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
     }
 
-    /* Note: Include all the Canvas interaction logic (pointerdown, move, up, etc.) from the previous version here to keep it functional */
+    function startEditor(mode) {
+        setTab('screen-editor');
+        // Editor canvas setup logic from previous versions goes here
+    }
 </script>
 </body>
 </html>
