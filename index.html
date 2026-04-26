@@ -1,81 +1,106 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI Blender Pro</title>
+    <title>AI Smart Collage</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
     <style>
-        body { font-family: -apple-system, sans-serif; background: #121212; color: #fff; text-align: center; padding: 20px; }
-        .btn { background: #007AFF; color: #fff; padding: 15px; border-radius: 12px; display: block; margin: 10px auto; width: 90%; border: none; font-size: 16px; font-weight: bold; cursor: pointer; }
-        .btn-secondary { background: #2c2c2e; border: 1px solid #007AFF; }
-        canvas { max-width: 100%; border-radius: 15px; margin-top: 20px; background: #1c1c1e; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
+        body { font-family: -apple-system, sans-serif; background: #000; color: #fff; margin: 0; padding: 10px; overflow: hidden; }
+        .controls { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; padding-bottom: 10px; }
+        .btn { background: #2c2c2e; color: #007AFF; padding: 8px; border-radius: 6px; border: 1px solid #007AFF; font-size: 11px; font-weight: bold; }
+        .btn-main { background: #007AFF; color: #fff; grid-column: span 2; }
+        canvas { border: 1px solid #333; background: #1c1c1e; touch-action: none; display: block; margin: auto; }
         input { display: none; }
-        p { color: #8e8e93; font-size: 14px; }
+        .pos-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px; margin-top: 5px; }
     </style>
 </head>
 <body>
-    <h2 style="margin-top:0;">AI Image Blender</h2>
-    
-    <label class="btn">Step 1: Select Background <input type="file" id="baseIn" accept="image/*"></label>
-    <label class="btn">Step 2: Select Overlay <input type="file" id="overIn" accept="image/*"></label>
-    <button class="btn btn-secondary" onclick="blend()">Step 3: Combine & Save</button>
-    
-    <canvas id="cvs"></canvas>
-    <p id="status">Upload two photos to start</p>
 
-    <script>
-        let bImg = new Image(), oImg = new Image();
-        const cvs = document.getElementById('cvs'), ctx = cvs.getContext('2d');
+<div class="controls">
+    <label class="btn btn-main">Add Photo <input type="file" id="fileIn" accept="image/*" multiple></label>
+    <button class="btn" onclick="changeSize(1.1)">Size +</button>
+    <button class="btn" onclick="changeSize(0.9)">Size -</button>
+</div>
 
-        document.getElementById('baseIn').onchange = (e) => load(e, bImg);
-        document.getElementById('overIn').onchange = (e) => load(e, oImg);
+<div class="pos-grid">
+    <button class="btn" onclick="reorder('TL')">Top-L</button>
+    <button class="btn" onclick="reorder('T')">Top-Mid</button>
+    <button class="btn" onclick="reorder('TR')">Top-R</button>
+    <button class="btn" onclick="reorder('L')">Left</button>
+    <button class="btn" onclick="reorder('M')">CENTER</button>
+    <button class="btn" onclick="reorder('R')">Right</button>
+    <button class="btn" onclick="reorder('BL')">Bot-L</button>
+    <button class="btn" onclick="reorder('B')">Bot-Mid</button>
+    <button class="btn" onclick="reorder('BR')">Bot-R</button>
+</div>
 
-        function load(e, img) {
+<canvas id="cvs" style="margin-top:10px;"></canvas>
+
+<script>
+    const cvs = document.getElementById('cvs');
+    const ctx = cvs.getContext('2d');
+    let images = [];
+    let selectedIdx = -1;
+
+    cvs.width = window.innerWidth - 20;
+    cvs.height = window.innerHeight - 240;
+
+    document.getElementById('fileIn').onchange = (e) => {
+        for (let file of e.target.files) {
             let reader = new FileReader();
-            reader.onload = (ev) => { 
-                img.src = ev.target.result; 
+            reader.onload = (ev) => {
+                let img = new Image();
+                img.src = ev.target.result;
                 img.onload = () => {
-                    // Set canvas size to match the background image
-                    if (img === bImg) {
-                        cvs.width = bImg.width;
-                        cvs.height = bImg.height;
-                    }
+                    let w = img.width/5, h = img.height/5;
+                    images.push({ img, x: (cvs.width-w)/2, y: (cvs.height-h)/2, w, h });
+                    selectedIdx = images.length - 1;
                     draw();
-                    document.getElementById('status').innerText = "Image Loaded!";
                 };
             };
-            reader.readAsDataURL(e.target.files[0]);
+            reader.readAsDataURL(file);
         }
+    };
 
-        function draw() {
-            if (!bImg.src) return;
-            ctx.clearRect(0, 0, cvs.width, cvs.height);
-            
-            // Draw Background
-            ctx.drawImage(bImg, 0, 0);
-            
-            // Draw Overlay with 50% transparency
-            if (oImg.src) {
-                ctx.globalAlpha = 0.5;
-                // Scale overlay to fit the background
-                ctx.drawImage(oImg, 0, 0, bImg.width, bImg.height);
-                ctx.globalAlpha = 1.0;
+    function draw() {
+        ctx.clearRect(0, 0, cvs.width, cvs.height);
+        images.forEach((obj, i) => {
+            ctx.drawImage(obj.img, obj.x, obj.y, obj.w, obj.h);
+            if (i === selectedIdx) {
+                ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 3;
+                ctx.strokeRect(obj.x, obj.y, obj.w, obj.h);
             }
-        }
+        });
+    }
 
-        function blend() { 
-            if (!bImg.src || !oImg.src) {
-                alert("Please select both images first!");
-                return;
-            }
-            draw();
-            // This opens the image in a new tab so you can save it on iPhone
-            const dataUrl = cvs.toDataURL("image/png");
-            const link = document.createElement('a');
-            link.href = dataUrl;
-            link.download = 'blended-photo.png';
-            link.click();
+    function reorder(pos) {
+        if (selectedIdx === -1) return;
+        let o = images[selectedIdx];
+        if (pos === 'TL') { o.x = 0; o.y = 0; }
+        if (pos === 'T')  { o.x = (cvs.width - o.w)/2; o.y = 0; }
+        if (pos === 'TR') { o.x = cvs.width - o.w; o.y = 0; }
+        if (pos === 'L')  { o.x = 0; o.y = (cvs.height - o.h)/2; }
+        if (pos === 'M')  { o.x = (cvs.width - o.w)/2; o.y = (cvs.height - o.h)/2; }
+        if (pos === 'R')  { o.x = cvs.width - o.w; o.y = (cvs.height - o.h)/2; }
+        if (pos === 'BL') { o.x = 0; o.y = cvs.height - o.h; }
+        if (pos === 'B')  { o.x = (cvs.width - o.w)/2; o.y = cvs.height - o.h; }
+        if (pos === 'BR') { o.x = cvs.width - o.w; o.y = cvs.height - o.h; }
+        draw();
+    }
+
+    function changeSize(f) {
+        if (selectedIdx !== -1) { images[selectedIdx].w *= f; images[selectedIdx].h *= f; draw(); }
+    }
+
+    cvs.onpointerdown = (e) => {
+        const rect = cvs.getBoundingClientRect();
+        const x = e.clientX - rect.left, y = e.clientY - rect.top;
+        selectedIdx = -1;
+        for (let i = images.length - 1; i >= 0; i--) {
+            let o = images[i];
+            if (x > o.x && x < o.x + o.w && y > o.y && y < o.y + o.h) { selectedIdx = i; break; }
         }
-    </script>
+        draw();
+    };
+</script>
 </body>
 </html>
