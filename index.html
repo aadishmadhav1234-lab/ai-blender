@@ -1,62 +1,112 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI Pro Collage</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>Collage Studio Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <style>
-        body { font-family: -apple-system, sans-serif; background: #000; color: #fff; margin: 0; overflow: hidden; }
-        .menu { display: flex; gap: 8px; padding: 10px; background: #1c1c1e; overflow-x: auto; white-space: nowrap; }
-        .btn { background: #007AFF; color: #fff; padding: 8px 15px; border-radius: 8px; border: none; font-size: 12px; font-weight: bold; }
-        .btn-opt { background: #333; border: 1px solid #555; }
-        canvas { display: block; margin: auto; background: #111; touch-action: none; }
+        :root { --accent: #007AFF; --bg: #000; --card: #1C1C1E; }
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; background: var(--bg); color: #fff; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
+        
+        /* Screens */
+        .screen { display: none; flex-direction: column; align-items: center; justify-content: center; height: 100%; padding: 20px; box-sizing: border-box; }
+        .active { display: flex; }
+
+        /* Step 1: Big Button */
+        .upload-btn { width: 200px; height: 200px; border-radius: 100px; background: var(--accent); border: none; color: white; font-size: 20px; font-weight: bold; box-shadow: 0 0 30px rgba(0,122,255,0.4); cursor: pointer; }
+        
+        /* Step 2: Orientation */
+        .opt-box { background: var(--card); padding: 20px; border-radius: 20px; width: 100%; max-width: 300px; text-align: center; }
+        .btn-row { display: flex; gap: 10px; margin-top: 20px; }
+        .btn-m { flex: 1; padding: 15px; border-radius: 12px; border: 1px solid #333; background: #2C2C2E; color: white; font-weight: 600; }
+
+        /* Step 3: Editor */
+        #editor-ui { height: 100%; width: 100%; position: relative; }
+        .top-bar { height: 50px; background: var(--card); display: flex; justify-content: space-between; align-items: center; padding: 0 15px; }
+        canvas { background: #111; touch-action: none; display: block; margin: auto; }
+        
+        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
 
-<div class="menu">
-    <label class="btn">Add Photos <input type="file" id="fileIn" accept="image/*" multiple style="display:none"></label>
-    <button class="btn btn-opt" onclick="setOrient('P')">Portrait Mode</button>
-    <button class="btn btn-opt" onclick="setOrient('L')">Landscape Mode</button>
-    <button class="btn" style="background:#34C759" onclick="download()">Save</button>
-</div>
+    <div id="stage1" class="screen active">
+        <label class="upload-btn" style="display:flex; align-items:center; justify-content:center; text-align:center;">
+            ADD PHOTOS
+            <input type="file" id="fileIn" accept="image/*" multiple>
+        </label>
+        <p style="margin-top:20px; color:#8E8E93;">Select multiple photos to begin</p>
+        <button id="nextBtn" class="btn-m" style="display:none; max-width:150px; margin-top:20px; background:#34C759;">NEXT</button>
+    </div>
 
-<canvas id="cvs"></canvas>
+    <div id="stage2" class="screen">
+        <div class="opt-box">
+            <h3>Layout Orientation</h3>
+            <div class="btn-row">
+                <button class="btn-m" onclick="startEditor('P')">PORTRAIT</button>
+                <button class="btn-m" onclick="startEditor('L')">LANDSCAPE</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="stage3" class="screen" style="padding:0;">
+        <div id="editor-ui">
+            <div class="top-bar">
+                <span id="imgCount" style="font-size:12px; color:#8E8E93;">Editing...</span>
+                <button onclick="location.reload()" style="background:none; border:none; color:#FF3B30;">Reset</button>
+                <button onclick="save()" style="background:none; border:none; color:#34C759; font-weight:bold;">SAVE</button>
+            </div>
+            <canvas id="cvs"></canvas>
+        </div>
+    </div>
 
 <script>
+    let rawImages = [];
+    let items = [];
+    let selectedIdx = -1;
+    let handleIdx = -1; // 0-7 for the 8 resize points
     const cvs = document.getElementById('cvs');
     const ctx = cvs.getContext('2d');
-    let items = [], selectedIdx = -1, isResizing = false;
-    const handleSize = 20; // Size of the resize circle for touch
 
-    function initCanvas() {
-        cvs.width = window.innerWidth;
-        cvs.height = window.innerHeight - 60;
-    }
-    window.onresize = initCanvas;
-    initCanvas();
-
+    // Navigation
     document.getElementById('fileIn').onchange = (e) => {
-        for (let file of e.target.files) {
+        rawImages = Array.from(e.target.files);
+        if(rawImages.length > 0) document.getElementById('nextBtn').style.display = 'block';
+    };
+
+    document.getElementById('nextBtn').onclick = () => {
+        document.getElementById('stage1').classList.remove('active');
+        document.getElementById('stage2').classList.add('active');
+    };
+
+    function startEditor(mode) {
+        document.getElementById('stage2').classList.remove('active');
+        document.getElementById('stage3').classList.add('active');
+        
+        cvs.width = window.innerWidth;
+        cvs.height = window.innerHeight - 50;
+
+        // Auto-grid layout logic (Side-by-Side)
+        let cols = mode === 'P' ? 2 : Math.ceil(rawImages.length / 2);
+        let cellW = cvs.width / cols;
+        let cellH = cvs.height / Math.ceil(rawImages.length / cols);
+
+        rawImages.forEach((file, i) => {
             let reader = new FileReader();
             reader.onload = (ev) => {
                 let img = new Image();
                 img.src = ev.target.result;
                 img.onload = () => {
-                    const w = 150, h = 150 * (img.height / img.width);
-                    items.push({ img, x: 50, y: 50, w, h });
+                    let col = i % cols, row = Math.floor(i / cols);
+                    items.push({
+                        img, 
+                        x: col * cellW + 10, y: row * cellH + 10, 
+                        w: cellW - 20, h: cellH - 20
+                    });
                     draw();
-                };
+                }
             };
             reader.readAsDataURL(file);
-        }
-    };
-
-    function setOrient(type) {
-        if (selectedIdx === -1) return;
-        let itm = items[selectedIdx];
-        if (type === 'P') { itm.h = itm.w * 1.5; } 
-        else { itm.w = itm.h * 1.5; }
-        draw();
+        });
     }
 
     function draw() {
@@ -66,52 +116,51 @@
             if (i === selectedIdx) {
                 ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 2;
                 ctx.strokeRect(itm.x, itm.y, itm.w, itm.h);
-                // Draw Resize Handle (Bottom Right Circle)
-                ctx.fillStyle = '#007AFF';
-                ctx.beginPath();
-                ctx.arc(itm.x + itm.w, itm.y + itm.h, handleSize/2, 0, Math.PI*2);
-                ctx.fill();
+                // Draw 8 Handles
+                const pts = getHandles(itm);
+                ctx.fillStyle = 'white';
+                pts.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 6, 0, 7); ctx.fill(); ctx.stroke(); });
             }
         });
     }
 
-    cvs.onpointerdown = (e) => {
-        const rect = cvs.getBoundingClientRect();
-        const x = e.clientX - rect.left, y = e.clientY - rect.top;
-        
-        if (selectedIdx !== -1) {
-            const itm = items[selectedIdx];
-            const dist = Math.sqrt((x - (itm.x + itm.w))**2 + (y - (itm.y + itm.h))**2);
-            if (dist < handleSize) { isResizing = true; return; }
-        }
+    function getHandles(itm) {
+        return [
+            {x: itm.x, y: itm.y}, {x: itm.x+itm.w/2, y: itm.y}, {x: itm.x+itm.w, y: itm.y},
+            {x: itm.x, y: itm.y+itm.h/2}, {x: itm.x+itm.w, y: itm.y+itm.h/2},
+            {x: itm.x, y: itm.y+itm.h}, {x: itm.x+itm.w/2, y: itm.y+itm.h}, {x: itm.x+itm.w, y: itm.y+itm.h}
+        ];
+    }
 
-        selectedIdx = items.findLastIndex(itm => x > itm.x && x < itm.x + itm.w && y > itm.y && y < itm.y + itm.h);
+    cvs.onpointerdown = (e) => {
+        const x = e.clientX, y = e.clientY - 50;
+        if (selectedIdx !== -1) {
+            const pts = getHandles(items[selectedIdx]);
+            handleIdx = pts.findIndex(p => Math.hypot(p.x-x, p.y-y) < 20);
+            if(handleIdx !== -1) return;
+        }
+        selectedIdx = items.findLastIndex(itm => x > itm.x && x < itm.x+itm.w && y > itm.y && y < itm.y+itm.h);
         draw();
     };
 
     cvs.onpointermove = (e) => {
-        if (selectedIdx === -1) return;
-        const rect = cvs.getBoundingClientRect();
-        const x = e.clientX - rect.left, y = e.clientY - rect.top;
-        const itm = items[selectedIdx];
+        if (selectedIdx === -1 || e.buttons !== 1) return;
+        const x = e.clientX, y = e.clientY - 50;
+        let itm = items[selectedIdx];
 
-        if (isResizing) {
-            itm.w = Math.max(30, x - itm.x);
-            itm.h = Math.max(30, y - itm.y);
-        } else if (e.buttons === 1) {
+        if (handleIdx !== -1) {
+            if ([2,4,7].includes(handleIdx)) itm.w = x - itm.x;
+            if ([5,6,7].includes(handleIdx)) itm.h = y - itm.y;
+            if ([0,3,5].includes(handleIdx)) { itm.w += itm.x - x; itm.x = x; }
+            if ([0,1,2].includes(handleIdx)) { itm.h += itm.y - y; itm.y = y; }
+        } else {
             itm.x = x - itm.w/2; itm.y = y - itm.h/2;
         }
         draw();
     };
 
-    cvs.onpointerup = () => { isResizing = false; };
-
-    function download() {
-        const link = document.createElement('a');
-        link.download = 'collage.png';
-        link.href = cvs.toDataURL();
-        link.click();
-    }
+    cvs.onpointerup = () => { handleIdx = -1; };
+    function save() { window.open(cvs.toDataURL()); }
 </script>
 </body>
 </html>
