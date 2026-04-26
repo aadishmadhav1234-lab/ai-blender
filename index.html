@@ -1,127 +1,208 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Collage Studio</title>
+    <title>Collage Studio Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <style>
-        :root { --accent: #007AFF; --bg: #000; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        input[type="file"] { display: none; }
+        :root { --accent: #007AFF; --bg: #000; --purple: #BD00FF; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; height: 100vh; overflow: hidden; }
         
-        /* Navigation (Tabs) */
-        .tab { display: none; flex-direction: column; height: 100%; width: 100%; position: absolute; top: 0; left: 0; }
+        .tab { display: none; height: 100%; width: 100%; flex-direction: column; position: relative; }
         .tab.active { display: flex; }
 
-        /* --- SCREEN 1: WELCOME --- */
+        /* --- SCREEN 1: CENTERED WELCOME --- */
         #screen-welcome { 
-            /* Kept the creative burst background you like */
             background: #000 url('image_8c0a32.jpg') no-repeat center center; 
-            background-size: cover; justify-content: flex-end; padding-bottom: 50px; 
-            align-items: center; /* Center buttons horizontally */
+            background-size: cover; 
+            justify-content: center; /* Vertical Center */
+            align-items: center;     /* Horizontal Center */
+            padding: 20px;
+            box-sizing: border-box;
         }
 
-        /* NEW LARGE ADD PHOTOS BUTTON */
+        .btn-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+        }
+
         .large-add-btn {
-            background: linear-gradient(180deg, #3795FF 0%, #157FFB 100%);
-            border: 2px solid #55A8FF;
-            width: 80%;
-            height: 120px; /* Big button size */
-            border-radius: 60px;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 2px solid var(--accent);
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
             color: white;
-            font-size: 24px;
-            font-weight: bold;
+            font-size: 22px;
+            font-weight: 800;
             display: flex;
             align-items: center;
             justify-content: center;
+            text-align: center;
             cursor: pointer;
-            box-shadow: 0 4px 15px rgba(0,122,255,0.3);
-            margin-bottom: 20px;
-            transition: transform 0.1s;
+            box-shadow: 0 0 30px rgba(0, 122, 255, 0.4);
+            transition: all 0.2s ease;
         }
-        .large-add-btn:active { transform: scale(0.98); }
 
-        /* NEW STANDARD NEXT BUTTON */
-        .standard-next-btn {
-            background: linear-gradient(180deg, #CB2EFF 0%, #B200FB 100%);
-            border: 2px solid #DE6FFF;
-            width: 50%;
-            height: 50px;
-            border-radius: 25px;
+        .large-add-btn:active { transform: scale(0.95); background: var(--accent); }
+
+        #nextBtn {
+            background: linear-gradient(135deg, #BD00FF, #007AFF);
+            border: none;
+            width: 180px;
+            padding: 15px;
+            border-radius: 30px;
             color: white;
             font-size: 18px;
-            font-weight: 600;
-            display: none; /* Initially Hidden */
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: transform 0.1s;
+            font-weight: bold;
+            display: none; /* Initially hidden */
+            box-shadow: 0 5px 15px rgba(189, 0, 255, 0.4);
+            animation: pulse 1.5s infinite;
         }
-        .standard-next-btn:active { transform: scale(0.98); }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
 
         /* --- SCREEN 2: LAYOUT --- */
-        #screen-layout { justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-        .layout-card { background: rgba(28, 28, 30, 0.8); backdrop-filter: blur(10px); padding: 30px; border-radius: 24px; text-align: center; border: 1px solid #333; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
-        .btn-m { padding: 15px; border-radius: 12px; border: 1px solid #555; background: #333; color: white; font-weight: 600; cursor: pointer; }
+        #screen-layout { justify-content: center; align-items: center; }
+        .opt-card { background: rgba(28, 28, 30, 0.9); padding: 30px; border-radius: 30px; text-align: center; border: 1px solid #333; width: 80%; }
+        .mode-btn { width: 100%; padding: 18px; margin: 10px 0; border-radius: 15px; background: #333; color: white; border: 1px solid #444; font-weight: bold; }
 
         /* --- SCREEN 3: EDITOR --- */
-        #screen-editor { padding: 0; background: #111; }
-        .editor-top { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; background: rgba(0,0,0,0.8); border-bottom: 1px solid #222; }
-        canvas { touch-action: none; display: block; margin: auto; }
-        .editor-dock { position: absolute; bottom: 0; width: 100%; height: 90px; background: rgba(20,20,22,0.9); border-top: 1px solid #333; }
+        .editor-top { height: 50px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; background: #1c1c1e; }
+        canvas { background: #111; touch-action: none; display: block; margin: auto; }
+        .dock { height: 110px; background: #1c1c1e; border-top: 1px solid #333; display: flex; flex-direction: column; justify-content: center; }
+        
+        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
 
     <div id="screen-welcome" class="tab active">
-        <label class="large-add-btn">
-            Big Add Photos +
-            <input type="file" id="fileIn" accept="image/*" multiple>
-        </label>
-        
-        <button id="nextBtn" class="standard-next-btn">Next</button>
+        <div class="btn-container">
+            <label class="large-add-btn">
+                ADD PHOTOS
+                <input type="file" id="fileIn" accept="image/*" multiple>
+            </label>
+            
+            <button id="nextBtn">NEXT ➔</button>
+        </div>
     </div>
 
     <div id="screen-layout" class="tab">
-        <div class="layout-card">
-            <h2>Select Layout</h2>
-            <div class="grid-2">
-                <button class="btn-m" onclick="startEditor('P')">Portrait</button>
-                <button class="btn-m" onclick="startEditor('L')">Landscape</button>
-            </div>
+        <div class="opt-card">
+            <h2>Select Style</h2>
+            <button class="mode-btn" onclick="buildCollage('P')">Portrait Stack</button>
+            <button class="mode-btn" onclick="buildCollage('L')">Landscape Grid</button>
         </div>
     </div>
 
     <div id="screen-editor" class="tab">
+        <div class="editor-top">
+            <button onclick="location.reload()" style="background:none; border:none; color:#8e8e93;">Cancel</button>
+            <span style="font-weight:bold;">STUDIO</span>
+            <button onclick="save()" style="background:none; border:none; color:var(--accent); font-weight:bold;">Export</button>
         </div>
+        <canvas id="cvs"></canvas>
+        <div class="dock">
+            <p style="text-align:center; font-size:12px; color:#555;">Tap image to resize or drag to move</p>
+        </div>
+    </div>
 
 <script>
-    let rawFiles = [];
+    let rawFiles = [], items = [], selectedIdx = -1;
+    const cvs = document.getElementById('cvs'), ctx = cvs.getContext('2d');
 
-    // FILE SELECTION LOGIC
-    document.getElementById('fileIn').onchange = (e) => {
+    // FIX: File input change listener
+    document.getElementById('fileIn').addEventListener('change', function(e) {
         rawFiles = Array.from(e.target.files);
-        if(rawFiles.length > 0) {
-            // FIX: Reveal the Next button only after files are picked
-            document.getElementById('nextBtn').style.display = 'flex';
-        } else {
-            document.getElementById('nextBtn').style.display = 'none';
+        if (rawFiles.length > 0) {
+            console.log("Files selected:", rawFiles.length);
+            document.getElementById('nextBtn').style.display = 'block';
+        }
+    });
+
+    document.getElementById('nextBtn').onclick = () => {
+        document.getElementById('screen-welcome').classList.remove('active');
+        document.getElementById('screen-layout').classList.add('active');
+    };
+
+    function buildCollage(mode) {
+        document.getElementById('screen-layout').classList.remove('active');
+        document.getElementById('screen-editor').classList.add('active');
+        
+        cvs.width = window.innerWidth;
+        cvs.height = window.innerHeight - 160;
+
+        let loaded = 0;
+        rawFiles.forEach((file, i) => {
+            let reader = new FileReader();
+            reader.onload = (ev) => {
+                let img = new Image();
+                img.src = ev.target.result;
+                img.onload = () => {
+                    let cols = (mode === 'P') ? 1 : 2;
+                    let rows = Math.ceil(rawFiles.length / cols);
+                    let cellW = cvs.width / cols, cellH = cvs.height / rows;
+                    
+                    let x = (i % cols) * cellW + 10;
+                    let y = Math.floor(i / cols) * cellH + 10;
+                    let w = cellW - 20, h = cellH - 20;
+
+                    // Centering logic for odd images
+                    if(mode === 'L' && i === rawFiles.length-1 && rawFiles.length % 2 !== 0) {
+                        x = (cvs.width - w) / 2;
+                    }
+
+                    items.push({ img, x, y, w, h });
+                    loaded++;
+                    if(loaded === rawFiles.length) draw();
+                };
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, cvs.width, cvs.height);
+        items.forEach((itm, i) => {
+            ctx.drawImage(itm.img, itm.x, itm.y, itm.w, itm.h);
+            if (i === selectedIdx) {
+                ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 4;
+                ctx.strokeRect(itm.x, itm.y, itm.w, itm.h);
+            }
+        });
+    }
+
+    // Basic drag logic for reordering/moving
+    cvs.onpointerdown = (e) => {
+        const rect = cvs.getBoundingClientRect();
+        const x = e.clientX - rect.left, y = e.clientY - rect.top;
+        selectedIdx = items.findLastIndex(itm => x > itm.x && x < itm.x+itm.w && y > itm.y && y < itm.y+itm.h);
+        draw();
+    };
+
+    cvs.onpointermove = (e) => {
+        if (selectedIdx !== -1 && e.buttons === 1) {
+            const rect = cvs.getBoundingClientRect();
+            const x = e.clientX - rect.left, y = e.clientY - rect.top;
+            items[selectedIdx].x = x - items[selectedIdx].w/2;
+            items[selectedIdx].y = y - items[selectedIdx].h/2;
+            draw();
         }
     };
 
-    // NAVIGATION LOGIC
-    document.getElementById('nextBtn').onclick = () => {
-        setTab('screen-layout');
-    };
-
-    function setTab(tabId) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
-    }
-
-    function startEditor(mode) {
-        setTab('screen-editor');
-        // Editor canvas setup logic from previous versions goes here
+    function save() {
+        const link = document.createElement('a');
+        link.download = 'collage.png';
+        link.href = cvs.toDataURL();
+        link.click();
     }
 </script>
 </body>
