@@ -4,97 +4,95 @@
     <title>Collage Studio Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <style>
-        :root { --accent: #007AFF; --bg: #000; --card: rgba(28, 28, 30, 0.98); }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        :root { --accent: #007AFF; --bg: #000; --card: #1c1c1e; --danger: #FF453A; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #fff; margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
         .tab { display: none; height: 100%; width: 100%; flex-direction: column; position: relative; }
         .tab.active { display: flex; }
 
-        /* Screen 1: Welcome */
-        #screen-welcome { background: #000 url('image_8c0a32.jpg') no-repeat center center; background-size: cover; justify-content: center; align-items: center; }
+        /* Welcome Screen */
+        #screen-welcome { background: #000; justify-content: center; align-items: center; text-align: center; }
         .large-add-btn {
-            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(20px);
-            border: 3px solid var(--accent); width: 220px; height: 220px; border-radius: 50%;
-            color: white; font-size: 22px; font-weight: 900; display: flex; align-items: center; 
-            justify-content: center; text-align: center; cursor: pointer; box-shadow: 0 0 40px rgba(0, 122, 255, 0.5);
-            z-index: 5;
+            background: rgba(255, 255, 255, 0.03); border: 2px solid var(--accent);
+            width: 210px; height: 210px; border-radius: 50%; color: white;
+            display: flex; align-items: center; justify-content: center; font-weight: 800; cursor: pointer;
+            box-shadow: 0 0 30px rgba(0, 122, 255, 0.2);
         }
-        #nextBtn {
-            background: linear-gradient(135deg, #BD00FF, #007AFF); border: none;
-            width: 180px; padding: 18px; border-radius: 40px; color: white; margin-top: 35px;
-            font-weight: 800; font-size: 18px; display: none; animation: pulse 1.5s infinite; z-index: 6;
-        }
-        @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
 
         /* Editor UI */
-        .editor-top { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; background: #1c1c1e; border-bottom: 1px solid #333; z-index: 10; }
-        #canvas-container { flex-grow: 1; position: relative; background: #111; overflow: hidden; display: flex; }
-        canvas { touch-action: none; display: block; margin: auto; max-width: 100%; max-height: 100%; }
-        .dock { background: #1c1c1e; border-top: 1px solid #333; padding: 15px 10px 45px; z-index: 10; }
-        .tool-row { display: flex; justify-content: space-around; gap: 10px; }
-        .tool { background: #333; border: none; color: #fff; padding: 15px; border-radius: 14px; font-size: 14px; font-weight: 700; flex: 1; }
+        .hint-bar { background: var(--accent); color: white; font-size: 11px; text-align: center; padding: 7px; font-weight: 800; letter-spacing: 0.3px; text-transform: uppercase; }
+        .editor-top { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 18px; background: #111; border-bottom: 1px solid #333; }
         
-        /* Export Overlay */
-        #export-overlay { 
-            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: #000; z-index: 2000; flex-direction: column; align-items: center; padding-top: 40px;
-        }
-        .action-box { width: 90%; display: flex; gap: 12px; margin: 25px 0; }
-        .act-btn { flex: 1; background: #1c1c1e; border: 2px solid #333; border-radius: 18px; padding: 18px; color: #007AFF; font-weight: 800; text-align: center; }
-        #preview-img { width: 88%; border-radius: 12px; border: 1px solid #444; max-height: 55%; object-fit: contain; }
-        .close-x { position: absolute; top: 15px; right: 20px; font-size: 35px; color: #fff; font-weight: bold; z-index: 2100; }
+        #canvas-container { flex-grow: 1; position: relative; background: #080808; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+        canvas { touch-action: none; background: #0a0a0a; box-shadow: 0 0 50px rgba(0,0,0,0.5); }
+        
+        .dock { background: #111; border-top: 1px solid #333; padding: 15px 12px 40px; }
+        .tool { background: #2c2c2e; border: none; color: #fff; padding: 16px; border-radius: 14px; font-size: 13px; font-weight: 700; flex: 1; -webkit-tap-highlight-color: transparent; }
 
+        /* Professional Layer Menu */
+        #ctx-menu {
+            display: none; position: fixed; background: rgba(32, 32, 34, 0.98); backdrop-filter: blur(25px);
+            border-radius: 16px; width: 230px; z-index: 9999; border: 1px solid #444; box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+        }
+        .menu-item { padding: 18px; font-size: 15px; border-bottom: 1px solid #38383a; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .menu-item:active { background: rgba(255,255,255,0.1); }
+        .menu-item:last-child { border: none; color: var(--danger); }
+
+        /* Export Overlay */
+        #export-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 5000; flex-direction: column; align-items: center; padding-top: 45px; }
+        #preview-img { width: 88%; border-radius: 12px; max-height: 58%; object-fit: contain; border: 1px solid #333; box-shadow: 0 10px 40px rgba(0,0,0,0.5); }
+        
         input[type="file"] { display: none; }
     </style>
 </head>
 <body>
 
     <div id="screen-welcome" class="tab active">
-        <label class="large-add-btn">ADD PHOTOS<input type="file" id="fileIn" accept="image/*" multiple></label>
-        <button id="nextBtn" onclick="showLayout()">NEXT ➔</button>
+        <label class="large-add-btn">SELECT PHOTOS<input type="file" id="fileIn" accept="image/*" multiple></label>
+        <button id="nextBtn" style="display:none; background:var(--accent); border:none; color:white; padding:16px 55px; border-radius:35px; margin-top:35px; font-weight:900; font-size:16px;" onclick="showLayout()">CONTINUE ➔</button>
     </div>
 
-    <div id="screen-layout" class="tab" style="justify-content:center; align-items:center; background:#000;">
-        <div style="background:var(--card); padding:40px; border-radius:35px; text-align:center; width:85%; border:2px solid #333;">
-            <h2 style="margin-bottom:25px;">Select Style</h2>
-            <button class="tool" style="width:100%; margin:10px 0; padding:20px; background:#007AFF;" onclick="initEditor('P')">Portrait Stack</button>
-            <button class="tool" style="width:100%; margin:10px 0; padding:20px; background:#5856D6;" onclick="initEditor('L')">Landscape Grid</button>
+    <div id="screen-layout" class="tab" style="justify-content:center; align-items:center;">
+        <div style="background:var(--card); padding:35px; border-radius:28px; width:80%; text-align:center; border:1px solid #333;">
+            <h3 style="margin-bottom:25px; font-size:22px;">Canvas Setup</h3>
+            <button class="tool" style="width:100%; margin-bottom:12px; background:var(--accent);" onclick="initEditor('P')">Portrait Stack</button>
+            <button class="tool" style="width:100%; background:#5856D6;" onclick="initEditor('L')">Landscape Grid</button>
         </div>
     </div>
 
     <div id="screen-editor" class="tab">
+        <div class="hint-bar">Long-Press Image to Move Front/Back</div>
         <div class="editor-top">
-            <button style="background:none; border:none; color:#8e8e93; font-size:16px;" onclick="location.reload()">Exit</button>
-            <div style="display:flex; gap:10px;">
-                <button class="tool" style="padding:8px 15px;" onclick="undo()">↩</button>
-                <button class="tool" style="padding:8px 15px;" onclick="redo()">↪</button>
-            </div>
-            <button id="export-trigger" style="background:none; border:none; color:#34C759; font-weight:900; font-size:18px;" onclick="prepExport()">EXPORT</button>
+            <button style="background:none; border:none; color:#8e8e93; font-weight:bold; font-size:14px;" onclick="location.reload()">CLOSE</button>
+            <button style="background:none; border:none; color:#34C759; font-weight:900; font-size:18px;" onclick="prepExport()">EXPORT</button>
         </div>
-        <div id="canvas-container">
-            <canvas id="cvs"></canvas>
-        </div>
+        <div id="canvas-container"><canvas id="cvs"></canvas></div>
         <div class="dock">
-            <div class="tool-row">
-                <button class="tool" onclick="reformat('P')">Portrait</button>
-                <button class="tool" onclick="reformat('L')">Landscape</button>
-                <button class="tool" style="background:#FF3B30;" onclick="deleteItem()">Delete</button>
+            <div style="display:flex; gap:12px;">
+                <button class="tool" onclick="reformat('P')">Reset Portrait</button>
+                <button class="tool" onclick="reformat('L')">Reset Landscape</button>
             </div>
         </div>
     </div>
 
+    <div id="ctx-menu">
+        <div class="menu-item" onclick="layerToFront()">Bring to Front <span>⇪</span></div>
+        <div class="menu-item" onclick="layerToBack()">Send to Back <span>⇊</span></div>
+        <div class="menu-item" onclick="deleteItem()">Remove Image</div>
+    </div>
+
     <div id="export-overlay">
-        <div class="close-x" onclick="document.getElementById('export-overlay').style.display='none'">✕</div>
+        <div style="position:absolute; top:20px; right:25px; font-size:35px; font-weight:bold;" onclick="document.getElementById('export-overlay').style.display='none'">✕</div>
         <img id="preview-img" src="">
-        <div class="action-box">
-            <div class="act-btn" onclick="downloadImg()">Download</div>
-            <div class="act-btn" onclick="shareImg()">Share 📤</div>
+        <div style="display:flex; width:90%; gap:15px; margin-top:35px;">
+            <button class="tool" style="background:#2c2c2e; padding:20px;" onclick="downloadImg()">Download</button>
+            <button class="tool" style="background:var(--accent); padding:20px;" onclick="shareImg()">Share 📤</button>
         </div>
     </div>
 
 <script>
-    let rawFiles = [], items = [], history = [], redoStack = [], selectedIdx = -1, handleIdx = -1;
-    const cvs = document.getElementById('cvs'), ctx = cvs.getContext('2d');
+    let rawFiles = [], items = [], selectedIdx = -1, handleIdx = -1;
+    const cvs = document.getElementById('cvs'), ctx = cvs.getContext('2d'), menu = document.getElementById('ctx-menu');
 
     document.getElementById('fileIn').onchange = (e) => {
         rawFiles = Array.from(e.target.files);
@@ -106,14 +104,12 @@
         document.getElementById('screen-layout').classList.add('active');
     }
 
-    function saveState() { history.push(JSON.stringify(items)); if(history.length > 20) history.shift(); redoStack = []; }
-    function undo() { if(history.length > 1) { redoStack.push(history.pop()); items = JSON.parse(history[history.length-2]); history.pop(); draw(); } }
-    function redo() { /* Redo implementation omitted for brevity */ }
-
     function initEditor(mode) {
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.getElementById('screen-editor').classList.add('active');
-        cvs.width = window.innerWidth; cvs.height = window.innerHeight - 200;
+        // Account for toolbars and safety areas
+        cvs.width = window.innerWidth; 
+        cvs.height = window.innerHeight - 230; 
         
         let loaded = 0; items = [];
         rawFiles.forEach((file) => {
@@ -121,7 +117,7 @@
             reader.onload = (ev) => {
                 let img = new Image(); img.src = ev.target.result;
                 img.onload = () => {
-                    items.push({ src:img.src, x:0, y:0, w:100, h:100 });
+                    items.push({ src:img, x:0, y:0, w:160, h:160 });
                     if(++loaded === rawFiles.length) reformat(mode);
                 }
             };
@@ -133,58 +129,68 @@
         let cols = (mode === 'P') ? 1 : 2;
         let cellW = cvs.width/cols, cellH = cvs.height/Math.ceil(items.length/cols);
         items.forEach((itm, i) => {
-            itm.w = cellW - 40; itm.h = cellH - 40;
-            itm.x = (i % cols) * cellW + 20;
-            itm.y = Math.floor(i / cols) * cellH + 20;
+            itm.w = cellW - 50; itm.h = cellH - 50;
+            itm.x = (i % cols) * cellW + 25; itm.y = Math.floor(i / cols) * cellH + 25;
         });
-        saveState(); draw();
+        selectedIdx = -1; draw();
     }
 
     function draw(isExport = false) {
         ctx.clearRect(0,0,cvs.width,cvs.height);
         items.forEach((itm, i) => {
-            let img = new Image(); img.src = itm.src;
-            ctx.drawImage(img, itm.x, itm.y, itm.w, itm.h);
+            ctx.drawImage(itm.src, itm.x, itm.y, itm.w, itm.h);
             if(!isExport && i === selectedIdx) {
+                // Professional Focus Ring
                 ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 4;
-                ctx.strokeRect(itm.x, itm.y, itm.w, itm.h);
+                ctx.setLineDash([5, 5]); ctx.strokeRect(itm.x, itm.y, itm.w, itm.h);
+                ctx.setLineDash([]);
+                // Resize Handles
                 getHandles(itm).forEach(p => {
-                    ctx.fillStyle='white'; ctx.beginPath(); ctx.arc(p.x,p.y,20,0,7); ctx.fill(); ctx.stroke();
+                    ctx.fillStyle='white'; ctx.strokeStyle='#007AFF'; ctx.lineWidth=2;
+                    ctx.beginPath(); ctx.arc(p.x,p.y,18,0,Math.PI*2); ctx.fill(); ctx.stroke();
                 });
             }
         });
     }
 
-    function getHandles(itm) {
-        return [{x:itm.x,y:itm.y}, {x:itm.x+itm.w,y:itm.y}, {x:itm.x,y:itm.y+itm.h}, {x:itm.x+itm.w,y:itm.y+itm.h}];
-    }
+    function getHandles(itm) { return [{x:itm.x,y:itm.y}, {x:itm.x+itm.w,y:itm.y}, {x:itm.x,y:itm.y+itm.h}, {x:itm.x+itm.w,y:itm.y+itm.h}]; }
 
-    // 100% AUDITED TOUCH LOGIC
     cvs.addEventListener('pointerdown', (e) => {
-        e.stopPropagation(); // Stop event from bleeding to background
-        const r = cvs.getBoundingClientRect(); const x = e.clientX-r.left, y = e.clientY-r.top;
+        menu.style.display = 'none';
+        const r = cvs.getBoundingClientRect(), x = e.clientX-r.left, y = e.clientY-r.top;
         
+        // Handle Resize Hitbox
         if(selectedIdx > -1) {
-            handleIdx = getHandles(items[selectedIdx]).findIndex(p => Math.hypot(p.x-x, p.y-y) < 60);
+            handleIdx = getHandles(items[selectedIdx]).findIndex(p => Math.hypot(p.x-x, p.y-y) < 50);
             if(handleIdx > -1) return;
         }
 
-        let foundIdx = items.findLastIndex(itm => x > itm.x && x < itm.x+itm.w && y > itm.y && y < itm.y+itm.h);
-        if(foundIdx > -1) {
-            let picked = items.splice(foundIdx, 1)[0];
-            items.push(picked);
-            selectedIdx = items.length - 1;
-        } else {
-            selectedIdx = -1;
-        }
+        // Layer Selection & Auto-Front
+        let found = items.findLastIndex(itm => x > itm.x && x < itm.x+itm.w && y > itm.y && y < itm.y+itm.h);
+        if(found > -1) {
+            selectedIdx = found;
+            layerToFront(); 
+        } else { selectedIdx = -1; }
         draw();
+    });
+
+    // Context Menu Logic
+    cvs.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const r = cvs.getBoundingClientRect(), x = e.clientX-r.left, y = e.clientY-r.top;
+        let found = items.findLastIndex(itm => x > itm.x && x < itm.x+itm.w && y > itm.y && y < itm.y+itm.h);
+        if(found > -1) {
+            selectedIdx = found; draw();
+            menu.style.top = Math.min(e.clientY, window.innerHeight - 200) + 'px';
+            menu.style.left = Math.min(e.clientX, window.innerWidth - 240) + 'px';
+            menu.style.display = 'block';
+        }
     });
 
     cvs.addEventListener('pointermove', (e) => {
         if(selectedIdx === -1 || e.buttons !== 1) return;
-        const r = cvs.getBoundingClientRect(); const x = e.clientX-r.left, y = e.clientY-r.top;
+        const r = cvs.getBoundingClientRect(), x = e.clientX-r.left, y = e.clientY-r.top;
         let itm = items[selectedIdx];
-        
         if(handleIdx === 0) { itm.w += itm.x-x; itm.h += itm.y-y; itm.x=x; itm.y=y; }
         else if(handleIdx === 1) { itm.w = x-itm.x; itm.h += itm.y-y; itm.y=y; }
         else if(handleIdx === 2) { itm.w += itm.x-x; itm.x=x; itm.h = y-itm.y; }
@@ -193,29 +199,39 @@
         draw();
     });
 
-    cvs.addEventListener('pointerup', () => { if(selectedIdx > -1) saveState(); handleIdx = -1; });
+    function layerToFront() {
+        if(selectedIdx === -1) return;
+        let p = items.splice(selectedIdx, 1)[0];
+        items.push(p);
+        selectedIdx = items.length - 1;
+        draw(); menu.style.display = 'none';
+    }
 
-    function deleteItem() { if(selectedIdx > -1) { items.splice(selectedIdx,1); selectedIdx=-1; saveState(); draw(); } }
+    function layerToBack() {
+        if(selectedIdx === -1) return;
+        let p = items.splice(selectedIdx, 1)[0];
+        items.unshift(p);
+        selectedIdx = 0; // Lock focus to the same image at its new index
+        draw(); menu.style.display = 'none';
+    }
+
+    function deleteItem() { if(selectedIdx > -1) { items.splice(selectedIdx,1); selectedIdx=-1; draw(); menu.style.display = 'none'; } }
 
     function prepExport() {
         selectedIdx = -1; draw(true);
-        const data = cvs.toDataURL("image/png");
-        document.getElementById('preview-img').src = data;
+        document.getElementById('preview-img').src = cvs.toDataURL("image/png", 1.0);
         document.getElementById('export-overlay').style.display = 'flex';
-        draw(false);
+        draw();
     }
 
-    function downloadImg() {
-        const a = document.createElement('a'); a.download = 'collage.png';
-        a.href = document.getElementById('preview-img').src; a.click();
+    function downloadImg() { 
+        const a = document.createElement('a'); a.download = 'ProCollage.png'; 
+        a.href = document.getElementById('preview-img').src; a.click(); 
     }
-
+    
     async function shareImg() {
-        try {
-            const b = await (await fetch(document.getElementById('preview-img').src)).blob();
-            const f = new File([b], 'collage.png', {type: 'image/png'});
-            if(navigator.share) await navigator.share({files: [f]});
-        } catch(e) { alert("Sharing failed. Try Download."); }
+        const b = await (await fetch(document.getElementById('preview-img').src)).blob();
+        if(navigator.share) await navigator.share({files: [new File([b], 'collage.png', {type:'image/png'})]});
     }
 </script>
 </body>
