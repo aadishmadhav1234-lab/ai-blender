@@ -1,23 +1,27 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AI Blender</title>
+    <title>AI Blender Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black">
     <style>
-        body { font-family: sans-serif; background: #000; color: #fff; text-align: center; padding: 20px; }
-        .btn { background: #007AFF; color: #fff; padding: 15px; border-radius: 10px; display: block; margin: 10px auto; width: 80%; border: none; font-weight: bold; }
-        canvas { max-width: 100%; border-radius: 10px; margin-top: 20px; background: #222; }
+        body { font-family: -apple-system, sans-serif; background: #121212; color: #fff; text-align: center; padding: 20px; }
+        .btn { background: #007AFF; color: #fff; padding: 15px; border-radius: 12px; display: block; margin: 10px auto; width: 90%; border: none; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .btn-secondary { background: #2c2c2e; border: 1px solid #007AFF; }
+        canvas { max-width: 100%; border-radius: 15px; margin-top: 20px; background: #1c1c1e; box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         input { display: none; }
+        p { color: #8e8e93; font-size: 14px; }
     </style>
 </head>
 <body>
-    <h1>AI Image Blender</h1>
-    <label class="btn">?? Select Base Image <input type="file" id="baseIn" accept="image/*"></label>
-    <label class="btn">? Select Overlay <input type="file" id="overIn" accept="image/*"></label>
-    <button class="btn" onclick="blend()">Combine Images</button>
+    <h2 style="margin-top:0;">AI Image Blender</h2>
+    
+    <label class="btn">Step 1: Select Background <input type="file" id="baseIn" accept="image/*"></label>
+    <label class="btn">Step 2: Select Overlay <input type="file" id="overIn" accept="image/*"></label>
+    <button class="btn btn-secondary" onclick="blend()">Step 3: Combine & Save</button>
+    
     <canvas id="cvs"></canvas>
+    <p id="status">Upload two photos to start</p>
 
     <script>
         let bImg = new Image(), oImg = new Image();
@@ -28,21 +32,50 @@
 
         function load(e, img) {
             let reader = new FileReader();
-            reader.onload = (ev) => { img.src = ev.target.result; img.onload = () => { cvs.width=img.width; cvs.height=img.height; draw(); } };
+            reader.onload = (ev) => { 
+                img.src = ev.target.result; 
+                img.onload = () => {
+                    // Set canvas size to match the background image
+                    if (img === bImg) {
+                        cvs.width = bImg.width;
+                        cvs.height = bImg.height;
+                    }
+                    draw();
+                    document.getElementById('status').innerText = "Image Loaded!";
+                };
+            };
             reader.readAsDataURL(e.target.files[0]);
         }
 
         function draw() {
             if (!bImg.src) return;
+            ctx.clearRect(0, 0, cvs.width, cvs.height);
+            
+            // Draw Background
             ctx.drawImage(bImg, 0, 0);
+            
+            // Draw Overlay with 50% transparency
             if (oImg.src) {
-                ctx.globalAlpha = 0.5; // Blending effect
+                ctx.globalAlpha = 0.5;
+                // Scale overlay to fit the background
                 ctx.drawImage(oImg, 0, 0, bImg.width, bImg.height);
                 ctx.globalAlpha = 1.0;
             }
         }
 
-        function blend() { draw(); alert("Images Blended!"); }
+        function blend() { 
+            if (!bImg.src || !oImg.src) {
+                alert("Please select both images first!");
+                return;
+            }
+            draw();
+            // This opens the image in a new tab so you can save it on iPhone
+            const dataUrl = cvs.toDataURL("image/png");
+            const link = document.createElement('a');
+            link.href = dataUrl;
+            link.download = 'blended-photo.png';
+            link.click();
+        }
     </script>
 </body>
 </html>
