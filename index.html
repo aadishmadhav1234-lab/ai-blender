@@ -2,3 +2,113 @@
 <html>
 <head>
     <title>Collage Studio Pro</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <style>
+        :root { --accent: #007AFF; --bg: #000; --card: #1c1c1e; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        
+        .tab { display: none; height: 100%; width: 100%; flex-direction: column; position: relative; }
+        .tab.active { display: flex; }
+
+        /* Welcome */
+        #screen-welcome { background: #000; justify-content: center; align-items: center; text-align: center; }
+        .large-add-btn {
+            background: rgba(255, 255, 255, 0.05); border: 2px solid var(--accent);
+            width: 220px; height: 220px; border-radius: 50%; color: white;
+            display: flex; align-items: center; justify-content: center; font-weight: 800; cursor: pointer;
+        }
+
+        /* Editor UI */
+        .hint-bar { background: var(--accent); color: white; font-size: 10px; text-align: center; padding: 8px; font-weight: 800; text-transform: uppercase; }
+        .editor-top { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background: #111; border-bottom: 1px solid #333; }
+        
+        #canvas-container { flex-grow: 1; position: relative; background: #080808; display: flex; align-items: center; justify-content: center; }
+        canvas { touch-action: none; background: #0a0a0a; box-shadow: 0 0 40px rgba(0,0,0,0.5); }
+        
+        .dock { background: #111; border-top: 1px solid #333; padding: 15px 12px 45px; }
+        .tool-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+        .tool { background: #2c2c2e; border: none; color: #fff; padding: 16px; border-radius: 12px; font-size: 13px; font-weight: 700; cursor: pointer; text-align: center; }
+        .tool.primary { background: var(--accent); }
+
+        /* Layer Context Menu */
+        #ctx-menu {
+            display: none; position: fixed; background: rgba(35, 35, 35, 0.98); backdrop-filter: blur(25px);
+            border-radius: 16px; width: 220px; z-index: 9999; border: 1px solid #444; box-shadow: 0 20px 50px rgba(0,0,0,0.9);
+        }
+        .menu-item { padding: 18px; font-size: 15px; border-bottom: 1px solid #333; cursor: pointer; display: flex; justify-content: space-between; }
+        .menu-item:last-child { border: none; color: #FF453A; }
+
+        /* Export Overlay */
+        #export-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 5000; flex-direction: column; align-items: center; padding-top: 50px; }
+        #preview-img { width: 88%; border-radius: 12px; max-height: 60%; object-fit: contain; border: 1px solid #222; }
+
+        input[type="file"] { display: none; }
+    </style>
+</head>
+<body>
+
+    <!-- Welcome Screen -->
+    <div id="screen-welcome" class="tab active">
+        <label class="large-add-btn">PICK PHOTOS<input type="file" id="fileIn" accept="image/*" multiple hidden></label>
+        <button id="nextBtn" style="display:none; background:var(--accent); border:none; color:white; padding:18px 60px; border-radius:40px; margin-top:35px; font-weight:900; font-size:16px;" onclick="showLayout()">CONTINUE ➔</button>
+    </div>
+
+    <!-- Layout Selection -->
+    <div id="screen-layout" class="tab" style="justify-content:center; align-items:center;">
+        <div style="background:var(--card); padding:35px; border-radius:30px; width:80%; text-align:center; border:1px solid #333;">
+            <h2 style="margin-bottom:25px;">Canvas Style</h2>
+            <button class="tool" style="width:100%; margin-bottom:12px; background:var(--accent);" onclick="initEditor('P')">Portrait Stack</button>
+            <button class="tool" style="width:100%; background:#5856D6;" onclick="initEditor('L')">Landscape Grid</button>
+        </div>
+    </div>
+
+    <!-- Editor -->
+    <div id="screen-editor" class="tab">
+        <div class="hint-bar">Tip: Long-press to Move to Back | Tap to Move to Front</div>
+        <div class="editor-top">
+            <button style="background:none; border:none; color:#8e8e93; font-weight:bold;" onclick="location.reload()">EXIT</button>
+            <button style="background:var(--accent); border:none; color:white; padding:10px 20px; border-radius:20px; font-weight:bold;" onclick="showExport()">EXPORT</button>
+        </div>
+        <div id="canvas-container">
+            <canvas id="collageCanvas"></canvas>
+        </div>
+        <div class="dock">
+            <div class="tool-grid">
+                <button class="tool">Add Text</button>
+                <button class="tool">Filters</button>
+                <button class="tool primary">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Overlay -->
+    <div id="export-overlay">
+        <img id="preview-img" src="" alt="Preview">
+        <button style="margin-top:20px; background:var(--accent); border:none; color:white; padding:12px 40px; border-radius:30px; font-weight:bold;" onclick="downloadImage()">Download</button>
+        <button style="margin-top:12px; background:#444; border:none; color:white; padding:12px 40px; border-radius:30px; font-weight:bold;" onclick="closeExport()">Close</button>
+    </div>
+
+    <script>
+        function showLayout() {
+            document.getElementById('screen-welcome').classList.remove('active');
+            document.getElementById('screen-layout').classList.add('active');
+        }
+        function initEditor(mode) {
+            document.getElementById('screen-layout').classList.remove('active');
+            document.getElementById('screen-editor').classList.add('active');
+            // TODO: initialize canvas based on mode (Portrait or Landscape)
+        }
+        function showExport() {
+            document.getElementById('export-overlay').style.display = 'flex';
+            // TODO: render canvas preview into #preview-img
+        }
+        function closeExport() {
+            document.getElementById('export-overlay').style.display = 'none';
+        }
+        function downloadImage() {
+            // TODO: implement canvas export to image
+        }
+    </script>
+
+</body>
+</html>
