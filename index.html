@@ -1,543 +1,102 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-  <title>Collage Studio Pro — Improved</title>
-  <style>
-    :root { --accent: #007AFF; --bg: #000; --card: #1c1c1e; }
-    * {
-      -webkit-tap-highlight-color: transparent;
-      -webkit-touch-callout: none;
-      -webkit-user-select: none;
-      box-sizing: border-box;
-      touch-action: manipulation;
-    }
-    body {
-      font-family: -apple-system, system-ui, sans-serif;
-      background: var(--bg); color: #fff; margin: 0;
-      height: 100vh; overflow: hidden; display: flex; flex-direction: column;
-    }
-    .tab { display: none; height: 100%; width: 100%; flex-direction: column; }
-    .tab.active { display: flex; }
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+    <title>Collage Pro iOS</title>
+    <style>
+        :root { --accent: #007AFF; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: #000; color: #fff; font-family: -apple-system, system-ui; overflow: hidden; }
 
-    #screen-welcome { justify-content: center; align-items: center; text-align: center; padding: 20px; }
-    .main-btn {
-      background: var(--accent); border: none; color: white; padding: 20px 50px;
-      border-radius: 40px; font-weight: 800; font-size: 18px; cursor: pointer;
-      box-shadow: 0 10px 30px rgba(0, 122, 255, 0.3);
-      display: inline-flex; align-items:center; gap:10px;
-    }
+        /* SCREENS */
+        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
+        #screen-welcome { display: flex; background: #111; }
+        
+        /* EDITOR LAYOUT */
+        #editor { display: none; background: #000; }
+        .toolbar { 
+            width: 100%; background: #1c1c1e; display: flex; gap: 10px; padding: 15px; 
+            overflow-x: auto; border-bottom: 0.5px solid #333; flex-shrink: 0;
+        }
 
-    .hint-bar { background: var(--accent); color: white; font-size: 11px; text-align: center; padding: 10px; font-weight: 900; }
-    .top-nav { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background: #111; }
+        .btn { padding: 10px 15px; border-radius: 8px; border: none; background: #3a3a3c; color: #fff; font-weight: 600; font-size: 13px; white-space: nowrap; }
+        .btn-main { background: #fff; color: #000; padding: 15px 30px; font-size: 18px; }
+        .btn-blue { background: var(--accent); }
+        .btn-red { background: #ff3b30; }
 
-    #canvas-wrap { flex-grow: 1; background: #080808; display: flex; align-items: center; justify-content: center; position: relative; }
-    canvas { background: #000; box-shadow: 0 0 40px rgba(0,0,0,0.8); touch-action: none; cursor: default; }
-
-    .bottom-dock { background: #111; border-top: 1px solid #333; padding: 15px 15px 40px; }
-    .tool-row { display: flex; gap: 10px; }
-    .tool {
-      flex: 1; background: #2c2c2e; border: none; color: #fff; padding: 14px 8px;
-      border-radius: 14px; font-size: 13px; font-weight: 700; text-align: center;
-      cursor: pointer;
-    }
-
-    #menu {
-      display: none; position: fixed; background: #222; border-radius: 15px;
-      width: 200px; z-index: 9999; border: 1px solid #444; box-shadow: 0 6px 18px rgba(0,0,0,0.6);
-    }
-    .m-item { padding: 14px 16px; border-bottom: 1px solid #333; font-weight: 600; cursor: pointer; }
-    .m-item:last-child { border: none; color: #FF453A; }
-
-    input[type="file"] { display: none; }
-    .muted { color:#888; font-size:13px; }
-
-    /* welcome thumbnails */
-    #thumbs { display:flex; gap:8px; margin-top:16px; overflow-x:auto; padding:6px 4px; justify-content:center; }
-    .thumb { width:72px; height:72px; border-radius:10px; object-fit:cover; border:2px solid rgba(255,255,255,0.06); }
-    #welcome-toolbar { margin-top:18px; display:flex; gap:10px; justify-content:center; align-items:center; }
-    .sub-btn { background:#1c1c1e; border: 1px solid #333; color:#fff; padding:10px 14px; border-radius:14px; cursor:pointer; font-weight:700; }
-  </style>
+        #canvas-wrap { flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%; background: #222; overflow: hidden; }
+        canvas { background: #fff; touch-action: none; max-width: 95%; max-height: 95%; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+    </style>
 </head>
 <body>
 
-  <div id="screen-welcome" class="tab active">
-    <label class="main-btn" id="pickBtn" title="Pick images">
-      PICK IMAGES
-      <input type="file" id="fileIn" accept="image/*" multiple>
-    </label>
+<div id="screen-welcome" class="screen">
+    <label class="btn btn-main">START COLLAGE<input type="file" id="fileIn" multiple hidden accept="image/*"></label>
+</div>
 
-    <div id="welcome-toolbar" style="display:block;">
-      <div id="nextBox" style="margin-top:10px; display:none; text-align:center;">
-        <p id="count" class="muted" style="margin-bottom:10px;">0 Photos Selected</p>
-        <div id="thumbs" aria-hidden="true"></div>
-        <div style="margin-top:12px;">
-          <button class="sub-btn" id="addMoreBtn">Add more</button>
-          <button class="main-btn" style="background:#34C759; margin-left:12px;" onclick="goLayout()">CONTINUE</button>
-        </div>
-      </div>
-    </div>
-  </div>
+<div id="screen-orientation" class="screen" style="background:#111">
+    <h2 style="margin-bottom:20px">Select Canvas Shape</h2>
+    <button class="btn btn-main" style="width:200px" onclick="initEditor(1.77)">Landscape</button>
+    <button class="btn btn-main" style="width:200px; margin-top:15px" onclick="initEditor(0.56)">Portrait</button>
+</div>
 
-  <div id="screen-layout" class="tab" style="justify-content:center; align-items:center;">
-    <div style="background:var(--card); padding:30px; border-radius:25px; width:85%; text-align:center;">
-      <button class="tool" style="width:100%; background:var(--accent); margin-bottom:15px;" onclick="start('P')">Portrait Stack</button>
-      <button class="tool" style="width:100%; background:#5856D6;" onclick="start('L')">Landscape Grid</button>
+<div id="editor" class="screen">
+    <div class="toolbar">
+        <button class="btn" onclick="addMore()">+ Add</button>
+        <button class="btn" onclick="orderTop()">Reorder</button>
+        <button class="btn btn-red" onclick="delItem()">Delete</button>
+        <input type="color" id="bgColor" value="#ffffff" onchange="setBg(this.value)" style="width:40px;height:40px;border:none;background:none">
+        <button class="btn" onclick="toggleBg()">Transparent</button>
+        <button class="btn btn-blue" onclick="save()">Save</button>
     </div>
-  </div>
-
-  <div id="screen-editor" class="tab">
-    <div class="hint-bar">TAP TO SELECT | LONG-PRESS TO OPEN MENU | DRAG TO MOVE | DRAG HANDLE TO RESIZE</div>
-    <div class="top-nav">
-      <button onclick="location.reload()" style="background:none; border:none; color:#888; cursor:pointer;">CANCEL</button>
-      <button onclick="exportImg()" style="background:none; border:none; color:#34C759; font-weight:900; cursor:pointer;">SAVE</button>
+    <div id="canvas-wrap">
+        <canvas id="c"></canvas>
     </div>
-    <div id="canvas-wrap"><canvas id="c" aria-label="collage canvas"></canvas></div>
-    <div class="bottom-dock">
-      <div class="tool-row">
-        <label class="tool" style="background:var(--accent); cursor:pointer;">
-          ADD +
-          <input type="file" id="addIn" accept="image/*" multiple>
-        </label>
-        <button class="tool" onclick="regrid('P')">Portrait</button>
-        <button class="tool" onclick="regrid('L')">Landscape</button>
-      </div>
-    </div>
-  </div>
-
-  <div id="menu" role="menu" aria-hidden="true">
-    <div class="m-item" onclick="toFront()">Bring to Front</div>
-    <div class="m-item" onclick="toBack()">Send to Back</div>
-    <div class="m-item" onclick="del()">Delete</div>
-  </div>
+</div>
 
 <script>
-  // Model
-  let items = [];
-  let selIdx = -1;
+const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
+let items = [], selected = null, bgOn = true, color = '#ffffff';
+let startX, startY, isDrag = false, isSize = false;
 
-  // Welcome file store (allows appending picks)
-  let welcomeFiles = [];
+// 1. FILE HANDLING
+document.getElementById('fileIn').onchange = e => {
+    window.files = [...e.target.files];
+    show('screen-orientation');
+};
 
-  // Canvas & UI refs
-  const cvs = document.getElementById('c');
-  const ctx = cvs.getContext('2d');
-  const menu = document.getElementById('menu');
-  const fileIn = document.getElementById('fileIn');
-  const addIn = document.getElementById('addIn');
-  const nextBox = document.getElementById('nextBox');
-  const countText = document.getElementById('count');
-  const thumbs = document.getElementById('thumbs');
-  const addMoreBtn = document.getElementById('addMoreBtn');
-
-  // Pointer / interaction state
-  let activePointerId = null;
-  let pointerDownPos = null;
-  let isDragging = false;
-  let isResizing = false;
-  let resizeIdx = -1;
-  let longPressTimer = null;
-  const LONG_PRESS_MS = 500;
-  const DRAG_THRESHOLD = 6;
-
-  // Helpers
-  function updateWelcomeUI() {
-    const n = welcomeFiles.length;
-    if (n > 0) {
-      nextBox.style.display = 'block';
-      countText.innerText = n + (n === 1 ? " Photo Selected" : " Photos Selected");
-      // thumbnails
-      thumbs.innerHTML = '';
-      welcomeFiles.forEach((f, i) => {
-        const url = URL.createObjectURL(f);
-        const img = document.createElement('img');
-        img.className = 'thumb';
-        img.src = url;
-        img.title = f.name;
-        img.onload = () => URL.revokeObjectURL(url);
-        thumbs.appendChild(img);
-      });
-    } else {
-      nextBox.style.display = 'none';
-      thumbs.innerHTML = '';
-    }
-  }
-
-  // fileIn: append images to welcomeFiles
-  fileIn.addEventListener('change', (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-    // simple dedupe by name+size
-    files.forEach(f => {
-      const key = f.name + ':' + f.size;
-      const exists = welcomeFiles.some(w => (w.name + ':' + w.size) === key);
-      if (!exists) welcomeFiles.push(f);
-    });
-    e.target.value = ''; // allow re-adding same file (dedupe above prevents duplicates)
-    updateWelcomeUI();
-  });
-
-  addMoreBtn.addEventListener('click', () => {
-    fileIn.click();
-  });
-
-  // addIn: append images to existing items inside editor
-  addIn.addEventListener('change', async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-    const loaded = await Promise.all(files.map(loadFileImage));
-    loaded.forEach(img => {
-      items.push({ img, x: 60, y: 60, w: 180, h: 180, aspect: img.width / img.height });
-    });
-    e.target.value = ''; // allow re-adding same file
-    draw();
-  });
-
-  // Image loader returns Image
-  function loadFileImage(file) {
-    return new Promise((resolve, reject) => {
-      const r = new FileReader();
-      r.onload = (ev) => {
-        const img = new Image();
-        img.onload = () => resolve(img);
-        img.onerror = reject;
-        img.src = ev.target.result;
-      };
-      r.onerror = reject;
-      r.readAsDataURL(file);
-    });
-  }
-
-  // Setup canvas size for DPR
-  function resizeCanvas() {
+// 2. INITIALIZE EDITOR
+async function initEditor(ratio) {
+    show('editor');
     const dpr = window.devicePixelRatio || 1;
-    const cssW = window.innerWidth;
-    const cssH = Math.max(100, window.innerHeight - 230);
-    cvs.style.width = cssW + 'px';
-    cvs.style.height = cssH + 'px';
-    cvs.width = Math.round(cssW * dpr);
-    cvs.height = Math.round(cssH * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
+    // Set fixed internal size for quality
+    canvas.width = 1000 * dpr;
+    canvas.height = (1000 / ratio) * dpr;
+    ctx.scale(dpr, dpr);
 
-  window.addEventListener('resize', () => {
-    resizeCanvas();
+    for (let f of window.files) await load(f);
     draw();
-  });
+}
 
-  // Start: read selected files (from welcomeFiles) and go to editor
-  function goLayout() {
-    document.getElementById('screen-welcome').classList.remove('active');
-    document.getElementById('screen-layout').classList.add('active');
-  }
+async function load(file) {
+    const img = new Image();
+    img.src = URL.createObjectURL(file);
+    await img.decode();
+    items.push({ img, x: 100, y: 100, w: 300, h: 300 });
+}
 
-  async function start(mode) {
-    document.getElementById('screen-layout').classList.remove('active');
-    document.getElementById('screen-editor').classList.add('active');
-    resizeCanvas();
+// 3. DRAWING
+function draw() {
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.width / dpr, h = canvas.height / dpr;
+    
+    ctx.clearRect(0, 0, w, h);
+    if (bgOn) { ctx.fillStyle = color; ctx.fillRect(0, 0, w, h); }
 
-    const files = welcomeFiles.slice();
-    if (files.length === 0) {
-      items = [];
-      regrid(mode);
-      return;
-    }
-
-    items = [];
-    try {
-      const imgs = await Promise.all(files.map(loadFileImage));
-      imgs.forEach(img => items.push({ img, x: 0, y: 0, w: 120, h: 120, aspect: img.width / img.height }));
-      regrid(mode);
-    } catch (err) {
-      console.error('Failed loading images', err);
-    }
-  }
-
-  // Layout items into a grid/stack
-  function regrid(mode) {
-    if (!cvs.width) resizeCanvas();
-    const cols = (mode === 'P') ? 1 : 2;
-    const cssW = parseFloat(cvs.style.width) || window.innerWidth;
-    const cssH = parseFloat(cvs.style.height) || (window.innerHeight - 230);
-    const cellW = cssW / cols;
-    const rows = Math.max(1, Math.ceil(items.length / cols));
-    const cellH = cssH / rows;
-
-    items.forEach((itm, i) => {
-      itm.w = Math.max(40, cellW - 40);
-      itm.h = Math.max(40, cellH - 40);
-      itm.x = (i % cols) * cellW + 20;
-      itm.y = Math.floor(i / cols) * cellH + 20;
-      itm.aspect = itm.img.width / itm.img.height;
-      // ensure h consistent with aspect (in case)
-      itm.h = itm.w / itm.aspect;
-    });
-    draw();
-  }
-
-  // Cross-browser hit test (findLastIndex fallback)
-  function hitTest(x, y) {
-    for (let i = items.length - 1; i >= 0; i--) {
-      const it = items[i];
-      if (x >= it.x && x <= it.x + it.w && y >= it.y && y <= it.y + it.h) return i;
-    }
-    return -1;
-  }
-
-  // check whether hit is on resize handle of item (returns index or -1)
-  function hitHandleTest(x, y) {
-    const HANDLE_SIZE = 18;
-    for (let i = items.length - 1; i >= 0; i--) {
-      const it = items[i];
-      const hx = it.x + it.w;
-      const hy = it.y + it.h;
-      if (x >= hx - HANDLE_SIZE && x <= hx + 6 && y >= hy - HANDLE_SIZE && y <= hy + 6) return i;
-    }
-    return -1;
-  }
-
-  // Draw all items
-  function draw() {
-    // Clear (use CSS px dimensions on clear; canvas pixel dims are scaled via transform)
-    const cssW = parseFloat(cvs.style.width) || window.innerWidth;
-    const cssH = parseFloat(cvs.style.height) || (window.innerHeight - 230);
-    ctx.clearRect(0, 0, cssW, cssH);
-
-    // Draw images in order
-    items.forEach((itm, i) => {
-      ctx.drawImage(itm.img, itm.x, itm.y, itm.w, itm.h);
-      if (i === selIdx) {
-        // selection stroke
-        ctx.strokeStyle = '#007AFF';
-        ctx.lineWidth = 4;
-        ctx.strokeRect(itm.x - 2, itm.y - 2, itm.w + 4, itm.h + 4);
-
-        // draw resize handle (bottom-right)
-        const hs = 12;
-        const hx = itm.x + itm.w;
-        const hy = itm.y + itm.h;
-        ctx.fillStyle = '#fff';
-        ctx.strokeStyle = '#000';
-        ctx.lineWidth = 2;
-        // small square handle
-        ctx.fillRect(hx - hs, hy - hs, hs, hs);
-        ctx.strokeRect(hx - hs, hy - hs, hs, hs);
-      }
-    });
-  }
-
-  // Pointer handling with pointer capture + long-press + resize
-  cvs.addEventListener('pointerdown', (e) => {
-    menu.style.display = 'none';
-    const rect = cvs.getBoundingClientRect();
-    const x = e.clientX - rect.left, y = e.clientY - rect.top;
-
-    // First check if user tapped the resize handle of any item (top-most first)
-    const handleIdx = hitHandleTest(x, y);
-    if (handleIdx > -1) {
-      selIdx = handleIdx;
-      draw();
-      isResizing = true;
-      resizeIdx = handleIdx;
-      // record pointer starting pos
-      pointerDownPos = { x: e.clientX, y: e.clientY };
-      // capture pointer
-      activePointerId = e.pointerId;
-      cvs.setPointerCapture(activePointerId);
-      // cancel long press (we'll not start it when resizing)
-      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-      return;
-    }
-
-    // not on handle: normal selection/drag flow
-    const idx = hitTest(x, y);
-    selIdx = idx;
-    draw();
-
-    activePointerId = e.pointerId;
-    cvs.setPointerCapture(activePointerId);
-    pointerDownPos = { x: e.clientX, y: e.clientY };
-    isDragging = false;
-
-    // Start long-press timer to open menu (if pointer stays and we have a selection)
-    if (selIdx > -1) {
-      longPressTimer = setTimeout(() => {
-        // only show menu if user didn't start dragging/resizing
-        if (!isDragging && !isResizing) {
-          showMenuAt(e.clientX, e.clientY);
-        }
-      }, LONG_PRESS_MS);
-    }
-  });
-
-  cvs.addEventListener('pointermove', (e) => {
-    // ignore unrelated pointers
-    if (activePointerId !== e.pointerId) return;
-
-    const rect = cvs.getBoundingClientRect();
-    const x = e.clientX - rect.left, y = e.clientY - rect.top;
-
-    // change cursor when over handle for feedback
-    const overHandle = hitHandleTest(x, y) > -1;
-    cvs.style.cursor = overHandle ? 'nwse-resize' : 'default';
-
-    // if resizing, update size
-    if (isResizing && resizeIdx > -1 && resizeIdx < items.length) {
-      const it = items[resizeIdx];
-      // cancel long press when resize moves
-      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-      const newW = Math.max(40, x - it.x);
-      const aspect = it.img.width / it.img.height;
-      it.w = newW;
-      it.h = newW / aspect;
-      draw();
-      return;
-    }
-
-    // if no selection, nothing to drag
-    if (selIdx === -1) return;
-
-    const dx = e.clientX - pointerDownPos.x;
-    const dy = e.clientY - pointerDownPos.y;
-    if (!isDragging && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
-      isDragging = true;
-      // cancel long press if we start dragging
-      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-    }
-
-    if (isDragging) {
-      const it = items[selIdx];
-      it.x = (e.clientX - rect.left) - it.w / 2;
-      it.y = (e.clientY - rect.top) - it.h / 2;
-      draw();
-    }
-  });
-
-  cvs.addEventListener('pointerup', (e) => {
-    if (activePointerId !== e.pointerId) return;
-    // release capture
-    try { cvs.releasePointerCapture(activePointerId); } catch {}
-    activePointerId = null;
-    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-    isDragging = false;
-    pointerDownPos = null;
-    if (isResizing) {
-      isResizing = false;
-      resizeIdx = -1;
-    }
-  });
-
-  cvs.addEventListener('pointercancel', (e) => {
-    if (activePointerId !== e.pointerId) return;
-    try { cvs.releasePointerCapture(activePointerId); } catch {}
-    activePointerId = null;
-    if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
-    isDragging = false;
-    isResizing = false;
-    pointerDownPos = null;
-    resizeIdx = -1;
-  });
-
-  // Desktop right-click should also open menu (if an item selected)
-  window.addEventListener('contextmenu', (e) => {
-    if (e.target === cvs && selIdx > -1) {
-      e.preventDefault();
-      showMenuAt(e.clientX, e.clientY);
-    }
-  });
-
-  function showMenuAt(clientX, clientY) {
-    const pad = 8;
-    // clamp menu position to viewport
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    const menuW = 200;
-    const menuH = 3 * 48; // approx
-    let left = clientX;
-    let top = clientY;
-    if (left + menuW + pad > vw) left = Math.max(pad, vw - menuW - pad);
-    if (top + menuH + pad > vh) top = Math.max(pad, vh - menuH - pad);
-    menu.style.left = left + 'px';
-    menu.style.top = top + 'px';
-    menu.style.display = 'block';
-    menu.setAttribute('aria-hidden', 'false');
-  }
-
-  // Actions
-  function toFront() {
-    if (selIdx < 0 || selIdx >= items.length) return;
-    const p = items.splice(selIdx, 1)[0];
-    items.push(p);
-    selIdx = items.length - 1;
-    menu.style.display = 'none';
-    draw();
-  }
-
-  function toBack() {
-    if (selIdx < 0 || selIdx >= items.length) return;
-    const p = items.splice(selIdx, 1)[0];
-    items.unshift(p);
-    selIdx = 0;
-    menu.style.display = 'none';
-    draw();
-  }
-
-  function del() {
-    if (selIdx < 0 || selIdx >= items.length) return;
-    items.splice(selIdx, 1);
-    selIdx = -1;
-    menu.style.display = 'none';
-    draw();
-  }
-
-  // Export: try download via toBlob, fallback to open data URL (iOS)
-  function exportImg() {
-    selIdx = -1; draw();
-    // Attempt to use toBlob and download
-    if (cvs.toBlob) {
-      cvs.toBlob((blob) => {
-        if (!blob) {
-          fallbackOpen();
-          return;
-        }
-        const a = document.createElement('a');
-        const url = URL.createObjectURL(blob);
-        a.href = url;
-        a.download = 'collage.png';
-        document.body.appendChild(a);
-        a.style.display = 'none';
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 60000);
-      }, 'image/png');
-    } else {
-      fallbackOpen();
-    }
-
-    function fallbackOpen() {
-      const url = cvs.toDataURL('image/png');
-      const w = window.open('', '_blank');
-      if (!w) {
-        // pop-up blocked fallback: show in current tab
-        location.href = url;
-        return;
-      }
-      w.document.write('<img src="' + url + '" style="width:100%;height:auto;"><p style="text-align:center;font-family:sans-serif;color:#222;">Long-press the image to save to Photos (mobile)</p>');
-    }
-  }
-
-  // Initialize canvas initial size
-  resizeCanvas();
-  draw();
-
-  // Accessibility: hide menu on outside tap
-  document.addEventListener('pointerdown', (e) => {
-    if (!menu.contains(e.target)) {
-      menu.style.display = 'none';
-      menu.setAttribute('aria-hidden', 'true');
-    }
-  });
-</script>
-</body>
-</html>
+    items.forEach(it => {
+        ctx.drawImage(it.img, it.x, it.y, it.w, it.h);
+        if (it === selected) {
+            ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 4;
+            ctx.strokeRect(it.x, it.y, it.w, it.h);
+            ctx
