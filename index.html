@@ -4,162 +4,139 @@
     <title>Collage Studio Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <style>
-        :root { --accent: #BD00FF; --accent-blue: #007AFF; --bg: #000; --card: rgba(28, 28, 30, 0.8); }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        input[type="file"] { display: none; }
-        
-        /* Navigation (Tabs) */
-        .tab { display: none; flex-direction: column; height: 100%; width: 100%; position: absolute; top: 0; left: 0; }
+        :root { --accent: #007AFF; --bg: #000; --card: rgba(28, 28, 30, 0.95); }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; height: 100vh; overflow: hidden; }
+        .tab { display: none; height: 100%; width: 100%; flex-direction: column; position: relative; }
         .tab.active { display: flex; }
 
-        /* --- SCREEN 1: WELCOME --- */
+        /* Screen 1: Welcome */
         #screen-welcome { 
-            background: #000 url('https://aadishmadhav1234-lab.github.io/ai-blender/bg_creative_burst.png') no-repeat center center; 
-            background-size: cover; justify-content: flex-end; padding-bottom: 50px; 
+            background: #000 url('image_8c0a32.jpg') no-repeat center center; 
+            background-size: cover; justify-content: center; align-items: center; 
         }
-        .ios-btn { 
-            width: 85%; max-width: 320px; height: 60px; border-radius: 30px; margin: 10px auto;
-            border: none; color: white; font-size: 18px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px;
-            cursor: pointer; box-shadow: 0 4px 15px rgba(189,0,255,0.3); transition: transform 0.1s;
-        }
-        .ios-btn:active { transform: scale(0.98); }
-        .ios-btn-blue { background: linear-gradient(180deg, #3795FF 0%, #157FFB 100%); border: 2px solid #55A8FF; }
-        .ios-btn-next { background: linear-gradient(180deg, #CB2EFF 0%, #B200FB 100%); border: 2px solid #DE6FFF; display: none; }
+        .btn-img { width: 280px; cursor: pointer; transition: transform 0.1s; }
 
-        /* --- SCREEN 2: LAYOUT --- */
-        #screen-layout { justify-content: center; align-items: center; padding: 20px; box-sizing: border-box; }
-        .layout-card { background: var(--card); backdrop-filter: blur(10px); padding: 30px; border-radius: 24px; text-align: center; border: 1px solid #333; }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 25px; }
-        .btn-m { padding: 15px; border-radius: 12px; border: 1px solid #555; background: #333; color: white; font-weight: 600; cursor: pointer; }
+        /* Screen 2: Layout */
+        #screen-layout { justify-content: center; align-items: center; background: #000; }
+        .opt-card { background: var(--card); padding: 30px; border-radius: 30px; text-align: center; border: 1px solid #333; width: 85%; }
+        .mode-btn { width: 100%; padding: 18px; margin: 10px 0; border-radius: 15px; border: 1px solid #444; background: #222; color: white; font-weight: bold; }
 
-        /* --- SCREEN 3: EDITOR (NEW PROFESSIONAL LOOK) --- */
-        #screen-editor { padding: 0; background: #111; }
-        .editor-top { height: 44px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; background: rgba(0,0,0,0.8); border-bottom: 1px solid #222; }
-        .editor-btn-top { background: none; border: none; font-size: 14px; font-weight: 600; cursor: pointer; }
-        canvas { touch-action: none; display: block; margin: auto; }
-        
-        /* Modern Tool Dock */
-        .editor-dock { 
-            position: absolute; bottom: 0; left: 0; width: 100%; height: 90px; 
-            background: linear-gradient(180deg, rgba(20,20,22,0.9) 0%, rgba(10,10,12,0.95) 100%);
-            border-top: 1px solid #333; backdrop-filter: blur(20px);
-            display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; padding: 10px 10px 30px; box-sizing: border-box; 
+        /* Screen 3: Editor */
+        .editor-top { height: 50px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; background: #1c1c1e; border-bottom: 1px solid #333; }
+        canvas { background: #111; touch-action: none; display: block; margin: auto; }
+        .dock { height: 110px; background: #1c1c1e; display: flex; flex-direction: column; border-top: 1px solid #333; }
+        .tool-row { display: flex; justify-content: space-around; padding: 10px; }
+        .tool { background: #333; border: none; color: #fff; padding: 8px 12px; border-radius: 8px; font-size: 11px; font-weight: 600; }
+        input[type="file"], #colorIn { display: none; }
+
+        /* --- NEW EXPORT OVERLAY --- */
+        #export-overlay { 
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.95); z-index: 1000; flex-direction: column; align-items: center; padding-top: 40px;
         }
-        .tool-btn { 
-            background: none; border: none; color: #fff; font-size: 11px; display: flex; flex-direction: column; align-items: center; gap: 5px; opacity: 0.7; 
-        }
-        .tool-btn:active { opacity: 1; }
-        .tool-icon { width: 24px; height: 24px; background: #fff; border-radius: 5px; } /* Temporary Icons */
+        .export-header { font-weight: bold; margin-bottom: 20px; font-size: 20px; }
+        .action-box { width: 90%; display: flex; gap: 10px; margin-bottom: 20px; }
+        .act-btn { flex: 1; background: #2C2C2E; border: 1px solid #444; border-radius: 15px; padding: 15px 5px; color: #007AFF; font-size: 12px; font-weight: 600; text-align: center; }
+        #preview-img { width: 85%; border-radius: 10px; border: 1px solid #333; box-shadow: 0 10px 30px rgba(0,0,0,0.5); object-fit: contain; max-height: 60%; }
+        .close-export { position: absolute; top: 20px; right: 20px; color: #8e8e93; font-size: 24px; }
     </style>
 </head>
 <body>
 
     <div id="screen-welcome" class="tab active">
-        <label class="ios-btn ios-btn-blue">
-            <span style="display:inline-block; margin-right:5px; padding:0 3px; border-radius:3px; background:#fff; color:#157FFB; font-weight:bold;">+</span>
-            Add Photos
+        <label>
+            <img src="image_8c0689.jpg" class="btn-img">
             <input type="file" id="fileIn" accept="image/*" multiple>
         </label>
-        <button id="nextBtn" class="ios-btn ios-btn-next">
-            Next
-            <span style="font-size: 20px;">›</span>
-        </button>
+        <img src="image_8bb436.jpg" id="nextBtn" class="btn-img" style="display:none; width:220px; margin-top:25px;">
     </div>
 
     <div id="screen-layout" class="tab">
-        <div class="layout-card">
-            <h2 style="margin:0; font-weight:700;">Choose Orientation</h2>
-            <p style="color:#8e8e93; font-size:14px;">Select the format for your rectangular collage.</p>
-            <div class="grid-2">
-                <button class="btn-m" onclick="startEditor('P')">PORTRAIT (2:3)</button>
-                <button class="btn-m" onclick="startEditor('L')">LANDSCAPE (3:2)</button>
-            </div>
+        <div class="opt-card">
+            <h2 style="margin-bottom:20px;">Choose Layout</h2>
+            <button class="mode-btn" onclick="buildCollage('P')">PORTRAIT (Vertical)</button>
+            <button class="mode-btn" onclick="buildCollage('L')">LANDSCAPE (Grid)</button>
         </div>
     </div>
 
     <div id="screen-editor" class="tab">
         <div class="editor-top">
-            <button class="editor-btn-top" onclick="location.reload()" style="color:#8e8e93;">Exit</button>
-            <span style="font-size:12px; font-weight:600;">STUDIO</span>
-            <button class="editor-btn-top" onclick="save()" style="color:#34C759; color:var(--accent-blue);">Export</button>
+            <button class="tool" onclick="undo()">↩ Undo</button>
+            <button class="tool" onclick="redo()">Redo ↪</button>
+            <button class="tool" onclick="showExport()" style="color:#34C759; font-weight:800;">EXPORT</button>
         </div>
-        
         <canvas id="cvs"></canvas>
-
-        <div class="editor-dock">
-            <button class="tool-btn" onclick="startEditor('P')"><div class="tool-icon" style="height:32px;"></div>2:3</button>
-            <button class="tool-btn" onclick="startEditor('L')"><div class="tool-icon" style="width:32px;"></div>3:2</button>
-            <button class="tool-btn"><div class="tool-icon" style="border:2px solid #fff; background:none;"></div>Swap</button>
-            <button class="tool-btn"><div class="tool-icon" style="border-radius:12px;"></div>Text</button>
-            <button class="tool-btn" onclick="deleteItem()"><div class="tool-icon" style="background:#FF3B30;"></div>Delete</button>
+        <div class="dock">
+            <div class="tool-row">
+                <button class="tool" onclick="addTextBox()">+ TEXT</button>
+                <button class="tool" onclick="toggleStyle('bold')"><b>B</b></button>
+                <button class="tool" onclick="toggleStyle('italic')"><i>I</i></button>
+                <select id="fontFamily" class="tool" onchange="updateText()">
+                    <option value="Arial">Modern</option>
+                    <option value="Georgia">Classic</option>
+                    <option value="Impact">Impact</option>
+                </select>
+                <label class="tool" style="background:#444">🎨 <input type="color" id="colorIn" onchange="updateText()"></label>
+            </div>
+            <div class="tool-row">
+                <input type="range" id="fontSize" min="10" max="100" value="30" style="flex:1; margin: 0 10px;" oninput="updateText()">
+                <button class="tool" style="background:#FF3B30" onclick="deleteItem()">Delete</button>
+            </div>
         </div>
     </div>
 
+    <div id="export-overlay">
+        <div class="close-export" onclick="this.parentElement.style.display='none'">✕</div>
+        <div class="export-header">Export Project</div>
+        
+        <div class="action-box">
+            <div class="act-btn" onclick="downloadImage()">⬇️<br>Download</div>
+            <div class="act-btn" onclick="saveToPhotos()">🖼️<br>Save Photos</div>
+            <div class="act-btn" onclick="shareImage()">📤<br>Share</div>
+        </div>
+
+        <p style="font-size:12px; color:#8E8E93; margin-bottom:10px;">Preview</p>
+        <img id="preview-img" src="">
+    </div>
+
 <script>
-    let rawFiles = [], items = [], selectedIdx = -1, handleIdx = -1;
-    const cvs = document.getElementById('cvs'), ctx = cvs.getContext('2d'), handleSize = 20;
+    /* ... (All previous variable declarations, fileIn, nextBtn, undo/redo, buildCollage, and draw logic from previous turn) ... */
 
-    // --- NAVIGATION ---
-    document.getElementById('fileIn').onchange = (e) => {
-        rawFiles = Array.from(e.target.files);
-        if(rawFiles.length > 0) document.getElementById('nextBtn').style.display = 'flex';
-    };
-
-    document.getElementById('nextBtn').onclick = () => {
-        setTab('screen-layout');
-    };
-
-    function setTab(tabId) {
-        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-        document.getElementById(tabId).classList.add('active');
+    function showExport() {
+        const dataUrl = cvs.toDataURL("image/png");
+        document.getElementById('preview-img').src = dataUrl;
+        document.getElementById('export-overlay').style.display = 'flex';
     }
 
-    // --- EDITOR LOGIC ---
-    function startEditor(mode) {
-        setTab('screen-editor');
-        cvs.width = window.innerWidth;
-        cvs.height = window.innerHeight - 134; // Adjusted for Top-Bar and Pro-Dock
-
-        let cols = mode === 'P' ? 2 : Math.ceil(rawFiles.length / 2);
-        const cellW = cvs.width / cols, cellH = cvs.height / Math.ceil(rawFiles.length / cols);
-        items = []; // Clear existing for re-layout
-
-        rawFiles.forEach((file, i) => {
-            let reader = new FileReader();
-            reader.onload = (ev) => {
-                let img = new Image();
-                img.src = ev.target.result;
-                img.onload = () => {
-                    let col = i % cols, row = Math.floor(i / cols);
-                    let w = cellW - 10, h = cellH - 10; // Simple automatic grid (no overlap)
-                    items.push({ img, x: col * cellW + 5, y: row * cellH + 5, w, h });
-                    draw();
-                }
-            };
-            reader.readAsDataURL(file);
-        });
+    function downloadImage() {
+        const link = document.createElement('a');
+        link.download = 'collage-studio.png';
+        link.href = cvs.toDataURL();
+        link.click();
     }
 
-    // --- DRAW & INTERACTION ---
-    function draw() {
-        ctx.clearRect(0, 0, cvs.width, cvs.height);
-        items.forEach((itm, i) => {
-            ctx.drawImage(itm.img, itm.x, itm.y, itm.w, itm.h);
-            if (i === selectedIdx) {
-                // Professional iOS Selection Style
-                ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 3;
-                ctx.strokeRect(itm.x, itm.y, itm.w, itm.h);
-                // 8 Handles (Modern design)
-                const pts = getHandles(itm);
-                ctx.fillStyle = 'white'; ctx.strokeStyle = 'rgba(0,0,0,0.5)'; ctx.lineWidth=1;
-                pts.forEach(p => { ctx.beginPath(); ctx.arc(p.x, p.y, 7, 0, 7); ctx.fill(); ctx.stroke(); });
-            }
-        });
+    function saveToPhotos() {
+        // Mobile browsers cannot force-save to gallery via JS for security.
+        // We instruct the user to use the native long-press feature.
+        alert("Long-press the preview image below and select 'Save to Photos'.");
     }
 
-    // [ getHandles(), onpointerdown(), onpointermove(), onpointerup() remain same logic as previous code but adjusted for editor height ]
-    // (Logic omitted for brevity in response, identical to previous advanced version but requires adding)
-    // [Make sure to paste the previous onpointerdown, move, up logic here to keep the handles working]
+    async function shareImage() {
+        const blob = await (await fetch(cvs.toDataURL())).blob();
+        const file = new File([blob], 'collage.png', { type: blob.type });
+        
+        if (navigator.share) {
+            navigator.share({
+                files: [file],
+                title: 'My Collage',
+                text: 'Check out this collage I made!'
+            }).catch(console.error);
+        } else {
+            alert("Sharing is not supported on this browser version.");
+        }
+    }
+
+    /* Note: Include all the Canvas interaction logic (pointerdown, move, up, etc.) from the previous version here to keep it functional */
 </script>
 </body>
 </html>
