@@ -33,7 +33,7 @@
     .top-nav { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 20px; background: #111; }
 
     #canvas-wrap { flex-grow: 1; background: #080808; display: flex; align-items: center; justify-content: center; position: relative; }
-    canvas { background: #000; box-shadow: 0 0 40px rgba(0,0,0,0.8); touch-action: none; }
+    canvas { background: #000; box-shadow: 0 0 40px rgba(0,0,0,0.8); touch-action: none; cursor: default; }
 
     .bottom-dock { background: #111; border-top: 1px solid #333; padding: 15px 15px 40px; }
     .tool-row { display: flex; gap: 10px; }
@@ -52,18 +52,31 @@
 
     input[type="file"] { display: none; }
     .muted { color:#888; font-size:13px; }
+
+    /* welcome thumbnails */
+    #thumbs { display:flex; gap:8px; margin-top:16px; overflow-x:auto; padding:6px 4px; justify-content:center; }
+    .thumb { width:72px; height:72px; border-radius:10px; object-fit:cover; border:2px solid rgba(255,255,255,0.06); }
+    #welcome-toolbar { margin-top:18px; display:flex; gap:10px; justify-content:center; align-items:center; }
+    .sub-btn { background:#1c1c1e; border: 1px solid #333; color:#fff; padding:10px 14px; border-radius:14px; cursor:pointer; font-weight:700; }
   </style>
 </head>
 <body>
 
   <div id="screen-welcome" class="tab active">
-    <label class="main-btn" id="pickBtn">
+    <label class="main-btn" id="pickBtn" title="Pick images">
       PICK IMAGES
       <input type="file" id="fileIn" accept="image/*" multiple>
     </label>
-    <div id="nextBox" style="margin-top:40px; display:none;">
-      <p id="count" class="muted" style="margin-bottom:15px;">0 Photos Selected</p>
-      <button class="main-btn" style="background:#34C759" onclick="goLayout()">CONTINUE</button>
+
+    <div id="welcome-toolbar" style="display:block;">
+      <div id="nextBox" style="margin-top:10px; display:none; text-align:center;">
+        <p id="count" class="muted" style="margin-bottom:10px;">0 Photos Selected</p>
+        <div id="thumbs" aria-hidden="true"></div>
+        <div style="margin-top:12px;">
+          <button class="sub-btn" id="addMoreBtn">Add more</button>
+          <button class="main-btn" style="background:#34C759; margin-left:12px;" onclick="goLayout()">CONTINUE</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -75,7 +88,7 @@
   </div>
 
   <div id="screen-editor" class="tab">
-    <div class="hint-bar">TAP TO SELECT | LONG-PRESS TO OPEN MENU | DRAG TO MOVE</div>
+    <div class="hint-bar">TAP TO SELECT | LONG-PRESS TO OPEN MENU | DRAG TO MOVE | DRAG HANDLE TO RESIZE</div>
     <div class="top-nav">
       <button onclick="location.reload()" style="background:none; border:none; color:#888; cursor:pointer;">CANCEL</button>
       <button onclick="exportImg()" style="background:none; border:none; color:#34C759; font-weight:900; cursor:pointer;">SAVE</button>
@@ -104,6 +117,9 @@
   let items = [];
   let selIdx = -1;
 
+  // Welcome file store (allows appending picks)
+  let welcomeFiles = [];
+
   // Canvas & UI refs
   const cvs = document.getElementById('c');
   const ctx = cvs.getContext('2d');
@@ -112,35 +128,67 @@
   const addIn = document.getElementById('addIn');
   const nextBox = document.getElementById('nextBox');
   const countText = document.getElementById('count');
+  const thumbs = document.getElementById('thumbs');
+  const addMoreBtn = document.getElementById('addMoreBtn');
 
   // Pointer / interaction state
   let activePointerId = null;
   let pointerDownPos = null;
   let isDragging = false;
+  let isResizing = false;
+  let resizeIdx = -1;
   let longPressTimer = null;
   const LONG_PRESS_MS = 500;
   const DRAG_THRESHOLD = 6;
 
   // Helpers
-  function updateNextBox() {
-    const n = fileIn.files.length;
+  function updateWelcomeUI() {
+    const n = welcomeFiles.length;
     if (n > 0) {
       nextBox.style.display = 'block';
       countText.innerText = n + (n === 1 ? " Photo Selected" : " Photos Selected");
+      // thumbnails
+      thumbs.innerHTML = '';
+      welcomeFiles.forEach((f, i) => {
+        const url = URL.createObjectURL(f);
+        const img = document.createElement('img');
+        img.className = 'thumb';
+        img.src = url;
+        img.title = f.name;
+        img.onload = () => URL.revokeObjectURL(url);
+        thumbs.appendChild(img);
+      });
     } else {
       nextBox.style.display = 'none';
+      thumbs.innerHTML = '';
     }
   }
 
-  fileIn.addEventListener('change', updateNextBox);
+  // fileIn: append images to welcomeFiles
+  fileIn.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+    // simple dedupe by name+size
+    files.forEach(f => {
+      const key = f.name + ':' + f.size;
+      const exists = welcomeFiles.some(w => (w.name + ':' + w.size) === key);
+      if (!exists) welcomeFiles.push(f);
+    });
+    e.target.value = ''; // allow re-adding same file (dedupe above prevents duplicates)
+    updateWelcomeUI();
+  });
 
-  // addIn: append images to existing items
+  addMoreBtn.addEventListener('click', () => {
+    fileIn.click();
+  });
+
+  // addIn: append images to existing items inside editor
   addIn.addEventListener('change', async (e) => {
     const files = Array.from(e.target.files || []);
     if (files.length === 0) return;
     const loaded = await Promise.all(files.map(loadFileImage));
     loaded.forEach(img => {
-      items.push({ img, x: 60, y: 60, w: 180, h: 180 });
+      items.push({ img, x: 60, y: 60, w: 180, h: 180, aspect: img.width / img.height });
     });
     e.target.value = ''; // allow re-adding same file
     draw();
@@ -178,7 +226,7 @@
     draw();
   });
 
-  // Start: read selected files and go to editor
+  // Start: read selected files (from welcomeFiles) and go to editor
   function goLayout() {
     document.getElementById('screen-welcome').classList.remove('active');
     document.getElementById('screen-layout').classList.add('active');
@@ -189,7 +237,7 @@
     document.getElementById('screen-editor').classList.add('active');
     resizeCanvas();
 
-    const files = Array.from(fileIn.files || []);
+    const files = welcomeFiles.slice();
     if (files.length === 0) {
       items = [];
       regrid(mode);
@@ -199,7 +247,7 @@
     items = [];
     try {
       const imgs = await Promise.all(files.map(loadFileImage));
-      imgs.forEach(img => items.push({ img, x: 0, y: 0, w: 120, h: 120 }));
+      imgs.forEach(img => items.push({ img, x: 0, y: 0, w: 120, h: 120, aspect: img.width / img.height }));
       regrid(mode);
     } catch (err) {
       console.error('Failed loading images', err);
@@ -221,6 +269,9 @@
       itm.h = Math.max(40, cellH - 40);
       itm.x = (i % cols) * cellW + 20;
       itm.y = Math.floor(i / cols) * cellH + 20;
+      itm.aspect = itm.img.width / itm.img.height;
+      // ensure h consistent with aspect (in case)
+      itm.h = itm.w / itm.aspect;
     });
     draw();
   }
@@ -234,27 +285,72 @@
     return -1;
   }
 
+  // check whether hit is on resize handle of item (returns index or -1)
+  function hitHandleTest(x, y) {
+    const HANDLE_SIZE = 18;
+    for (let i = items.length - 1; i >= 0; i--) {
+      const it = items[i];
+      const hx = it.x + it.w;
+      const hy = it.y + it.h;
+      if (x >= hx - HANDLE_SIZE && x <= hx + 6 && y >= hy - HANDLE_SIZE && y <= hy + 6) return i;
+    }
+    return -1;
+  }
+
   // Draw all items
   function draw() {
-    // Clear
-    ctx.clearRect(0, 0, cvs.width, cvs.height);
+    // Clear (use CSS px dimensions on clear; canvas pixel dims are scaled via transform)
+    const cssW = parseFloat(cvs.style.width) || window.innerWidth;
+    const cssH = parseFloat(cvs.style.height) || (window.innerHeight - 230);
+    ctx.clearRect(0, 0, cssW, cssH);
+
     // Draw images in order
     items.forEach((itm, i) => {
       ctx.drawImage(itm.img, itm.x, itm.y, itm.w, itm.h);
       if (i === selIdx) {
+        // selection stroke
         ctx.strokeStyle = '#007AFF';
-        ctx.lineWidth = 5;
-        ctx.strokeRect(itm.x, itm.y, itm.w, itm.h);
+        ctx.lineWidth = 4;
+        ctx.strokeRect(itm.x - 2, itm.y - 2, itm.w + 4, itm.h + 4);
+
+        // draw resize handle (bottom-right)
+        const hs = 12;
+        const hx = itm.x + itm.w;
+        const hy = itm.y + itm.h;
+        ctx.fillStyle = '#fff';
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 2;
+        // small square handle
+        ctx.fillRect(hx - hs, hy - hs, hs, hs);
+        ctx.strokeRect(hx - hs, hy - hs, hs, hs);
       }
     });
   }
 
-  // Pointer handling with pointer capture + long-press
+  // Pointer handling with pointer capture + long-press + resize
   cvs.addEventListener('pointerdown', (e) => {
     menu.style.display = 'none';
     const rect = cvs.getBoundingClientRect();
     const x = e.clientX - rect.left, y = e.clientY - rect.top;
 
+    // First check if user tapped the resize handle of any item (top-most first)
+    const handleIdx = hitHandleTest(x, y);
+    if (handleIdx > -1) {
+      selIdx = handleIdx;
+      draw();
+      isResizing = true;
+      resizeIdx = handleIdx;
+      // record pointer starting pos
+      pointerDownPos = { x: e.clientX, y: e.clientY };
+      // capture pointer
+      activePointerId = e.pointerId;
+      cvs.setPointerCapture(activePointerId);
+      // cancel long press (we'll not start it when resizing)
+      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+      return;
+    }
+
+    // not on handle: normal selection/drag flow
     const idx = hitTest(x, y);
     selIdx = idx;
     draw();
@@ -267,8 +363,8 @@
     // Start long-press timer to open menu (if pointer stays and we have a selection)
     if (selIdx > -1) {
       longPressTimer = setTimeout(() => {
-        // only show menu if user didn't start dragging
-        if (!isDragging) {
+        // only show menu if user didn't start dragging/resizing
+        if (!isDragging && !isResizing) {
           showMenuAt(e.clientX, e.clientY);
         }
       }, LONG_PRESS_MS);
@@ -278,6 +374,26 @@
   cvs.addEventListener('pointermove', (e) => {
     // ignore unrelated pointers
     if (activePointerId !== e.pointerId) return;
+
+    const rect = cvs.getBoundingClientRect();
+    const x = e.clientX - rect.left, y = e.clientY - rect.top;
+
+    // change cursor when over handle for feedback
+    const overHandle = hitHandleTest(x, y) > -1;
+    cvs.style.cursor = overHandle ? 'nwse-resize' : 'default';
+
+    // if resizing, update size
+    if (isResizing && resizeIdx > -1 && resizeIdx < items.length) {
+      const it = items[resizeIdx];
+      // cancel long press when resize moves
+      if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
+      const newW = Math.max(40, x - it.x);
+      const aspect = it.img.width / it.img.height;
+      it.w = newW;
+      it.h = newW / aspect;
+      draw();
+      return;
+    }
 
     // if no selection, nothing to drag
     if (selIdx === -1) return;
@@ -291,7 +407,6 @@
     }
 
     if (isDragging) {
-      const rect = cvs.getBoundingClientRect();
       const it = items[selIdx];
       it.x = (e.clientX - rect.left) - it.w / 2;
       it.y = (e.clientY - rect.top) - it.h / 2;
@@ -307,6 +422,10 @@
     if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
     isDragging = false;
     pointerDownPos = null;
+    if (isResizing) {
+      isResizing = false;
+      resizeIdx = -1;
+    }
   });
 
   cvs.addEventListener('pointercancel', (e) => {
@@ -315,7 +434,9 @@
     activePointerId = null;
     if (longPressTimer) { clearTimeout(longPressTimer); longPressTimer = null; }
     isDragging = false;
+    isResizing = false;
     pointerDownPos = null;
+    resizeIdx = -1;
   });
 
   // Desktop right-click should also open menu (if an item selected)
