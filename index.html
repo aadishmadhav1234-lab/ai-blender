@@ -5,7 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <style>
         :root { --accent: #007AFF; --bg: #000; --card: rgba(28, 28, 30, 0.95); }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; height: 100vh; overflow: hidden; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: #fff; margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+        
         .tab { display: none; height: 100%; width: 100%; flex-direction: column; position: relative; }
         .tab.active { display: flex; }
 
@@ -15,7 +16,7 @@
             background-size: cover; justify-content: center; align-items: center; 
         }
         .large-add-btn {
-            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(15px);
             border: 2px solid var(--accent); width: 220px; height: 220px; border-radius: 50%;
             color: white; font-size: 20px; font-weight: 800; display: flex; align-items: center; 
             justify-content: center; text-align: center; cursor: pointer; box-shadow: 0 0 30px rgba(0, 122, 255, 0.4);
@@ -27,27 +28,23 @@
         }
         @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
 
-        /* Screen 2: Layout */
-        #screen-layout { justify-content: center; align-items: center; }
-        .opt-card { background: var(--card); padding: 30px; border-radius: 30px; text-align: center; border: 1px solid #333; width: 85%; }
-        .mode-btn { width: 100%; padding: 18px; margin: 10px 0; border-radius: 15px; background: #333; color: white; border: 1px solid #444; font-weight: bold; }
-
         /* Screen 3: Editor */
-        .editor-top { height: 50px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; background: #1c1c1e; }
-        canvas { background: #111; touch-action: none; display: block; margin: auto; }
-        .dock { background: #1c1c1e; border-top: 1px solid #333; padding-bottom: 20px; }
-        .tool-row { display: flex; justify-content: space-around; padding: 10px; gap: 5px; }
-        .tool { background: #333; border: none; color: #fff; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: bold; flex: 1; }
-        input[type="file"], #colorIn { display: none; }
-
+        .editor-top { height: 50px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; background: #1c1c1e; border-bottom: 1px solid #333; }
+        canvas { background: #111; touch-action: none; display: block; margin: auto; flex-grow: 1; }
+        .dock { background: #1c1c1e; border-top: 1px solid #333; padding: 15px 10px 30px; }
+        .tool-row { display: flex; justify-content: space-around; gap: 10px; }
+        .tool { background: #333; border: none; color: #fff; padding: 12px; border-radius: 12px; font-size: 13px; font-weight: bold; flex: 1; }
+        
         /* Export Overlay */
         #export-overlay { 
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
             background: rgba(0,0,0,0.98); z-index: 1000; flex-direction: column; align-items: center; padding-top: 40px;
         }
-        .action-box { width: 90%; display: flex; gap: 10px; margin: 20px 0; }
-        .act-btn { flex: 1; background: #2C2C2E; border-radius: 15px; padding: 15px; color: #007AFF; font-weight: bold; text-align: center; }
-        #preview-img { width: 80%; border-radius: 10px; border: 1px solid #444; max-height: 60%; object-fit: contain; }
+        .action-box { width: 95%; display: flex; gap: 8px; margin: 20px 0; }
+        .act-btn { flex: 1; background: #2C2C2E; border-radius: 15px; padding: 15px 5px; color: #007AFF; font-weight: bold; text-align: center; font-size: 12px; }
+        #preview-img { width: 85%; border-radius: 10px; border: 1px solid #444; max-height: 60%; object-fit: contain; }
+        
+        input[type="file"] { display: none; }
     </style>
 </head>
 <body>
@@ -57,54 +54,48 @@
         <button id="nextBtn">NEXT ➔</button>
     </div>
 
-    <div id="screen-layout" class="tab">
-        <div class="opt-card">
-            <h2>Select Style</h2>
-            <button class="mode-btn" onclick="buildCollage('P')">Portrait Stack</button>
-            <button class="mode-btn" onclick="buildCollage('L')">Landscape Grid</button>
+    <div id="screen-layout" class="tab" style="justify-content:center; align-items:center;">
+        <div style="background:var(--card); padding:30px; border-radius:30px; text-align:center; width:80%;">
+            <h2>Grid Style</h2>
+            <button class="tool" style="width:100%; margin:10px 0; padding:20px;" onclick="initEditor('P')">Portrait Stack</button>
+            <button class="tool" style="width:100%; margin:10px 0; padding:20px;" onclick="initEditor('L')">Landscape Grid</button>
         </div>
     </div>
 
     <div id="screen-editor" class="tab">
         <div class="editor-top">
-            <button class="tool" onclick="undo()">↩ Undo</button>
-            <button class="tool" onclick="redo()">Redo ↪</button>
-            <button class="tool" onclick="showExport()" style="color:#34C759">EXPORT</button>
+            <button style="background:none; border:none; color:#8e8e93;" onclick="location.reload()">Exit</button>
+            <div style="display:flex; gap:10px;">
+                <button class="tool" style="padding:5px 12px;" onclick="undo()">↩</button>
+                <button class="tool" style="padding:5px 12px;" onclick="redo()">↪</button>
+            </div>
+            <button style="background:none; border:none; color:#34C759; font-weight:bold;" onclick="showExport()">EXPORT</button>
         </div>
         <canvas id="cvs"></canvas>
         <div class="dock">
             <div class="tool-row">
-                <button class="tool" onclick="addTextBox()">+ TEXT</button>
-                <button class="tool" onclick="toggleStyle('bold')"><b>B</b></button>
-                <button class="tool" onclick="toggleStyle('italic')"><i>I</i></button>
-                <label class="tool">COLOR<input type="color" id="colorIn" onchange="updateText()"></label>
-            </div>
-            <div class="tool-row">
-                <select id="fontFamily" class="tool" onchange="updateText()">
-                    <option value="Arial">Modern</option><option value="Georgia">Classic</option>
-                    <option value="Impact">Impact</option><option value="Courier New">Mono</option>
-                </select>
-                <input type="range" id="fontSize" min="10" max="100" value="30" oninput="updateText()">
-                <button class="tool" style="background:#FF3B30" onclick="deleteItem()">Delete</button>
+                <button class="tool" onclick="reformat('P')">Portrait</button>
+                <button class="tool" onclick="reformat('L')">Landscape</button>
+                <button class="tool" style="background:#FF3B30;" onclick="deleteItem()">Delete</button>
             </div>
         </div>
     </div>
 
     <div id="export-overlay">
-        <div style="position:absolute; top:20px; right:20px; font-size:24px;" onclick="document.getElementById('export-overlay').style.display='none'">✕</div>
+        <div style="position:absolute; top:20px; right:20px; font-size:28px;" onclick="document.getElementById('export-overlay').style.display='none'">✕</div>
         <div class="action-box">
             <div class="act-btn" onclick="downloadImg()">Download</div>
-            <div class="act-btn" onclick="alert('Long-press image below to Save')">Save Photo</div>
-            <div class="act-btn" onclick="shareImg()">Share</div>
+            <div class="act-btn" onclick="alert('Long-press the image below to Save to Photos')">Save Photo</div>
+            <div class="act-btn" id="shareBtn" onclick="shareImg()">Share 📤</div>
         </div>
         <img id="preview-img" src="">
+        <p style="color:#555; margin-top:10px; font-size:12px;">Final Preview</p>
     </div>
 
 <script>
     let rawFiles = [], items = [], history = [], redoStack = [], selectedIdx = -1, handleIdx = -1;
     const cvs = document.getElementById('cvs'), ctx = cvs.getContext('2d');
 
-    // Navigation & Files
     document.getElementById('fileIn').onchange = (e) => {
         rawFiles = Array.from(e.target.files);
         if(rawFiles.length > 0) document.getElementById('nextBtn').style.display = 'block';
@@ -118,87 +109,84 @@
     function undo() { if(history.length > 1) { redoStack.push(history.pop()); items = JSON.parse(history[history.length-1]); draw(); } }
     function redo() { if(redoStack.length > 0) { const s = redoStack.pop(); history.push(s); items = JSON.parse(s); draw(); } }
 
-    function buildCollage(mode) {
+    function initEditor(mode) {
         document.getElementById('screen-layout').classList.remove('active');
         document.getElementById('screen-editor').classList.add('active');
-        cvs.width = window.innerWidth; cvs.height = window.innerHeight - 160;
+        cvs.width = window.innerWidth; cvs.height = window.innerHeight - 170;
         let loaded = 0;
         rawFiles.forEach((file, i) => {
             let reader = new FileReader();
             reader.onload = (ev) => {
                 let img = new Image(); img.src = ev.target.result;
                 img.onload = () => {
-                    let cols = (mode === 'P') ? 1 : 2;
-                    let cellW = cvs.width/cols, cellH = cvs.height/Math.ceil(rawFiles.length/cols);
-                    items.push({ type:'img', src:img.src, x:(i%cols)*cellW+10, y:Math.floor(i/cols)*cellH+10, w:cellW-20, h:cellH-20 });
-                    if(++loaded === rawFiles.length) { saveState(); draw(); }
+                    items.push({ src:img.src, x:0, y:0, w:100, h:100 });
+                    if(++loaded === rawFiles.length) { reformat(mode); }
                 }
             };
             reader.readAsDataURL(file);
         });
     }
 
-    function addTextBox() {
-        const text = prompt("Text:", "New Text");
-        if(text) { items.push({ type:'text', text, x:50, y:50, w:100, h:40, size:30, color:'#fff', font:'Arial', bold:false, italic:false }); saveState(); draw(); }
+    function reformat(mode) {
+        let cols = (mode === 'P') ? 1 : 2;
+        let cellW = cvs.width/cols, cellH = cvs.height/Math.ceil(items.length/cols);
+        items.forEach((itm, i) => {
+            itm.w = cellW - 20; itm.h = cellH - 20;
+            itm.x = (i % cols) * cellW + 10;
+            itm.y = Math.floor(i / cols) * cellH + 10;
+            if(mode === 'L' && i === items.length-1 && items.length % 2 !== 0) itm.x = (cvs.width - itm.w) / 2;
+        });
+        saveState(); draw();
     }
-
-    function updateText() {
-        if(selectedIdx > -1 && items[selectedIdx].type==='text') {
-            items[selectedIdx].color = document.getElementById('colorIn').value;
-            items[selectedIdx].font = document.getElementById('fontFamily').value;
-            items[selectedIdx].size = document.getElementById('fontSize').value;
-            draw();
-        }
-    }
-
-    function toggleStyle(s) { if(selectedIdx>-1 && items[selectedIdx].type==='text') { items[selectedIdx][s]=!items[selectedIdx][s]; draw(); } }
 
     function draw() {
         ctx.clearRect(0,0,cvs.width,cvs.height);
         items.forEach((itm, i) => {
-            if(itm.type === 'img') { let img = new Image(); img.src = itm.src; ctx.drawImage(img, itm.x, itm.y, itm.w, itm.h); }
-            else {
-                ctx.fillStyle = itm.color; ctx.font = `${itm.bold?'bold ':''}${itm.italic?'italic ':''}${itm.size}px ${itm.font}`;
-                ctx.fillText(itm.text, itm.x, itm.y + parseInt(itm.size));
-                itm.w = ctx.measureText(itm.text).width; itm.h = parseInt(itm.size);
-            }
+            let tempImg = new Image(); tempImg.src = itm.src;
+            ctx.drawImage(tempImg, itm.x, itm.y, itm.w, itm.h);
             if(i === selectedIdx) {
-                ctx.strokeStyle = '#007AFF'; ctx.strokeRect(itm.x, itm.y, itm.w, itm.h);
-                getHandles(itm).forEach(p => { ctx.fillStyle='white'; ctx.beginPath(); ctx.arc(p.x,p.y,8,0,7); ctx.fill(); ctx.stroke(); });
+                ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 3; ctx.strokeRect(itm.x, itm.y, itm.w, itm.h);
             }
         });
     }
 
-    function getHandles(itm) {
-        return [{x:itm.x,y:itm.y}, {x:itm.x+itm.w,y:itm.y}, {x:itm.x,y:itm.y+itm.h}, {x:itm.x+itm.w,y:itm.y+itm.h}];
-    }
-
     cvs.onpointerdown = (e) => {
-        const rect = cvs.getBoundingClientRect(); const x = e.clientX-rect.left, y = e.clientY-rect.top;
-        if(selectedIdx > -1) { handleIdx = getHandles(items[selectedIdx]).findIndex(p => Math.hypot(p.x-x, p.y-y) < 25); if(handleIdx > -1) return; }
+        const r = cvs.getBoundingClientRect(); const x = e.clientX-r.left, y = e.clientY-r.top;
         selectedIdx = items.findLastIndex(itm => x > itm.x && x < itm.x+itm.w && y > itm.y && y < itm.y+itm.h);
         draw();
     };
 
     cvs.onpointermove = (e) => {
         if(selectedIdx === -1 || e.buttons !== 1) return;
-        const rect = cvs.getBoundingClientRect(); const x = e.clientX-rect.left, y = e.clientY-rect.top;
-        let itm = items[selectedIdx];
-        if(handleIdx > -1) { itm.w = Math.max(20, x-itm.x); itm.h = Math.max(20, y-itm.y); }
-        else { itm.x = x-itm.w/2; itm.y = y-itm.h/2; }
-        draw();
+        const r = cvs.getBoundingClientRect(); const x = e.clientX-r.left, y = e.clientY-r.top;
+        let itm = items[selectedIdx]; itm.x = x-itm.w/2; itm.y = y-itm.h/2; draw();
     };
 
-    cvs.onpointerup = () => { if(selectedIdx > -1) saveState(); handleIdx = -1; };
+    cvs.onpointerup = () => { if(selectedIdx > -1) saveState(); };
     function deleteItem() { if(selectedIdx > -1) { items.splice(selectedIdx,1); selectedIdx=-1; saveState(); draw(); } }
     
     function showExport() { document.getElementById('preview-img').src = cvs.toDataURL(); document.getElementById('export-overlay').style.display='flex'; }
     function downloadImg() { const a = document.createElement('a'); a.download='collage.png'; a.href=cvs.toDataURL(); a.click(); }
+
+    // REPAIRED SHARE LOGIC
     async function shareImg() {
-        const b = await (await fetch(cvs.toDataURL())).blob();
-        const f = new File([b], 'collage.png', {type:b.type});
-        if(navigator.share) navigator.share({files:[f]});
+        try {
+            const dataUrl = cvs.toDataURL("image/png");
+            const blob = await (await fetch(dataUrl)).blob();
+            const file = new File([blob], 'my-collage.png', { type: 'image/png' });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({
+                    files: [file],
+                    title: 'Collage Studio',
+                    text: 'Made with Collage Studio Pro'
+                });
+            } else {
+                alert("Your browser doesn't support file sharing. Use Download instead.");
+            }
+        } catch (err) {
+            console.error("Share failed:", err);
+        }
     }
 </script>
 </body>
