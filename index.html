@@ -3,100 +3,28 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <title>Collage Pro iOS</title>
+    <title>Collage Studio Pro — iOS</title>
     <style>
         :root { --accent: #007AFF; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { margin: 0; padding: 0; height: 100%; width: 100%; background: #000; color: #fff; font-family: -apple-system, system-ui; overflow: hidden; }
+        body, html { margin: 0; padding: 0; height: 100vh; width: 100vw; background: #000; color: #fff; font-family: -apple-system, system-ui; overflow: hidden; }
 
-        /* SCREENS */
-        .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 10; }
-        #screen-welcome { display: flex; background: #111; }
+        /* FIXED SCREEN WRAPPERS */
+        .screen { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; z-index: 10; }
+        #screen-welcome { display: flex; background: linear-gradient(135deg,#1e3c72,#2a5298); z-index: 20; }
         
-        /* EDITOR LAYOUT */
-        #editor { display: none; background: #000; }
+        .btn { padding: 12px 24px; border-radius: 12px; border: none; font-weight: 600; font-size: 16px; cursor: pointer; }
+        .btn-white { background: #fff; color: #000; }
+        .btn-next { background: var(--accent); color: #fff; margin-top: 20px; display: none; animation: fadeIn 0.3s; }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* EDITOR UI */
+        #editor { background: #000; display: none; }
         .toolbar { 
-            width: 100%; background: #1c1c1e; display: flex; gap: 10px; padding: 15px; 
+            width: 100%; background: #1c1c1e; display: flex; gap: 8px; padding: 12px; 
             overflow-x: auto; border-bottom: 0.5px solid #333; flex-shrink: 0;
         }
+        .tool-btn { padding: 8px 12px; border-radius: 8px; border: none; background: #2c2c2e; color: #fff; font-size: 13px; white-space: nowrap; }
 
-        .btn { padding: 10px 15px; border-radius: 8px; border: none; background: #3a3a3c; color: #fff; font-weight: 600; font-size: 13px; white-space: nowrap; }
-        .btn-main { background: #fff; color: #000; padding: 15px 30px; font-size: 18px; }
-        .btn-blue { background: var(--accent); }
-        .btn-red { background: #ff3b30; }
-
-        #canvas-wrap { flex-grow: 1; display: flex; align-items: center; justify-content: center; width: 100%; background: #222; overflow: hidden; }
-        canvas { background: #fff; touch-action: none; max-width: 95%; max-height: 95%; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-    </style>
-</head>
-<body>
-
-<div id="screen-welcome" class="screen">
-    <label class="btn btn-main">START COLLAGE<input type="file" id="fileIn" multiple hidden accept="image/*"></label>
-</div>
-
-<div id="screen-orientation" class="screen" style="background:#111">
-    <h2 style="margin-bottom:20px">Select Canvas Shape</h2>
-    <button class="btn btn-main" style="width:200px" onclick="initEditor(1.77)">Landscape</button>
-    <button class="btn btn-main" style="width:200px; margin-top:15px" onclick="initEditor(0.56)">Portrait</button>
-</div>
-
-<div id="editor" class="screen">
-    <div class="toolbar">
-        <button class="btn" onclick="addMore()">+ Add</button>
-        <button class="btn" onclick="orderTop()">Reorder</button>
-        <button class="btn btn-red" onclick="delItem()">Delete</button>
-        <input type="color" id="bgColor" value="#ffffff" onchange="setBg(this.value)" style="width:40px;height:40px;border:none;background:none">
-        <button class="btn" onclick="toggleBg()">Transparent</button>
-        <button class="btn btn-blue" onclick="save()">Save</button>
-    </div>
-    <div id="canvas-wrap">
-        <canvas id="c"></canvas>
-    </div>
-</div>
-
-<script>
-const canvas = document.getElementById('c'), ctx = canvas.getContext('2d');
-let items = [], selected = null, bgOn = true, color = '#ffffff';
-let startX, startY, isDrag = false, isSize = false;
-
-// 1. FILE HANDLING
-document.getElementById('fileIn').onchange = e => {
-    window.files = [...e.target.files];
-    show('screen-orientation');
-};
-
-// 2. INITIALIZE EDITOR
-async function initEditor(ratio) {
-    show('editor');
-    const dpr = window.devicePixelRatio || 1;
-    // Set fixed internal size for quality
-    canvas.width = 1000 * dpr;
-    canvas.height = (1000 / ratio) * dpr;
-    ctx.scale(dpr, dpr);
-
-    for (let f of window.files) await load(f);
-    draw();
-}
-
-async function load(file) {
-    const img = new Image();
-    img.src = URL.createObjectURL(file);
-    await img.decode();
-    items.push({ img, x: 100, y: 100, w: 300, h: 300 });
-}
-
-// 3. DRAWING
-function draw() {
-    const dpr = window.devicePixelRatio || 1;
-    const w = canvas.width / dpr, h = canvas.height / dpr;
-    
-    ctx.clearRect(0, 0, w, h);
-    if (bgOn) { ctx.fillStyle = color; ctx.fillRect(0, 0, w, h); }
-
-    items.forEach(it => {
-        ctx.drawImage(it.img, it.x, it.y, it.w, it.h);
-        if (it === selected) {
-            ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 4;
-            ctx.strokeRect(it.x, it.y, it.w, it.h);
-            ctx
+        #canvas-wrap { flex: 1; width: 100%; display: flex; align-items: center; justify-
