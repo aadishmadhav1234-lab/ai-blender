@@ -1,30 +1,217 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-    <meta charset="utf-8">
+    <title>Collage Studio Pro</title>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
-    <title>Collage Studio Pro — iOS</title>
     <style>
-        :root { --accent: #007AFF; }
-        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body, html { margin: 0; padding: 0; height: 100vh; width: 100vw; background: #000; color: #fff; font-family: -apple-system, system-ui; overflow: hidden; }
-
-        /* FIXED SCREEN WRAPPERS */
-        .screen { position: fixed; inset: 0; display: none; flex-direction: column; align-items: center; justify-content: center; width: 100%; height: 100%; z-index: 10; }
-        #screen-welcome { display: flex; background: linear-gradient(135deg,#1e3c72,#2a5298); z-index: 20; }
+        :root { --accent: #007AFF; --bg: #000; --card: #1c1c1e; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: #fff; margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
         
-        .btn { padding: 12px 24px; border-radius: 12px; border: none; font-weight: 600; font-size: 16px; cursor: pointer; }
-        .btn-white { background: #fff; color: #000; }
-        .btn-next { background: var(--accent); color: #fff; margin-top: 20px; display: none; animation: fadeIn 0.3s; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .tab { display: none; height: 100%; width: 100%; flex-direction: column; position: relative; }
+        .tab.active { display: flex; }
 
-        /* EDITOR UI */
-        #editor { background: #000; display: none; }
-        .toolbar { 
-            width: 100%; background: #1c1c1e; display: flex; gap: 8px; padding: 12px; 
-            overflow-x: auto; border-bottom: 0.5px solid #333; flex-shrink: 0;
+        /* Welcome */
+        #screen-welcome { background: #000; justify-content: center; align-items: center; }
+        .large-add-btn {
+            background: rgba(255, 255, 255, 0.05); border: 2px solid var(--accent);
+            width: 200px; height: 200px; border-radius: 50%; color: white;
+            display: flex; align-items: center; justify-content: center; font-weight: 800;
         }
-        .tool-btn { padding: 8px 12px; border-radius: 8px; border: none; background: #2c2c2e; color: #fff; font-size: 13px; white-space: nowrap; }
 
-        #canvas-wrap { flex: 1; width: 100%; display: flex; align-items: center; justify-
+        /* Editor */
+        .hint-bar { background: var(--accent); color: white; font-size: 11px; text-align: center; padding: 6px; font-weight: bold; letter-spacing: 0.5px; }
+        .editor-top { height: 60px; display: flex; justify-content: space-between; align-items: center; padding: 0 15px; background: #111; border-bottom: 1px solid #333; }
+        #canvas-container { flex-grow: 1; position: relative; background: #0a0a0a; display: flex; align-items: center; justify-content: center; }
+        canvas { touch-action: none; cursor: move; }
+        
+        .dock { background: #111; border-top: 1px solid #333; padding: 15px 10px 40px; }
+        .tool { background: #2c2c2e; border: none; color: #fff; padding: 15px; border-radius: 12px; font-size: 13px; font-weight: 700; flex: 1; }
+
+        /* Professional Context Menu */
+        #ctx-menu {
+            display: none; position: fixed; background: rgba(30, 30, 30, 0.95); backdrop-filter: blur(20px);
+            border-radius: 14px; width: 220px; z-index: 9999; border: 1px solid #444; box-shadow: 0 20px 40px rgba(0,0,0,0.6);
+        }
+        .menu-item { padding: 16px; font-size: 14px; border-bottom: 1px solid #333; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .menu-item:last-child { border: none; color: #FF453A; }
+
+        /* Overlay */
+        #export-overlay { display: none; position: fixed; inset: 0; background: #000; z-index: 5000; flex-direction: column; align-items: center; padding-top: 40px; }
+        #preview-img { width: 85%; border-radius: 8px; max-height: 60%; object-fit: contain; border: 1px solid #222; }
+    </style>
+</head>
+<body>
+
+    <div id="screen-welcome" class="tab active">
+        <label class="large-add-btn">ADD IMAGES<input type="file" id="fileIn" accept="image/*" multiple hidden></label>
+        <button id="nextBtn" style="display:none; background:var(--accent); border:none; color:white; padding:15px 50px; border-radius:30px; margin-top:30px; font-weight:900;" onclick="showLayout()">NEXT ➔</button>
+    </div>
+
+    <div id="screen-layout" class="tab" style="justify-content:center; align-items:center;">
+        <div style="background:var(--card); padding:30px; border-radius:24px; width:80%; text-align:center;">
+            <h3 style="margin-bottom:20px">Select Canvas Mode</h3>
+            <button class="tool" style="width:100%; margin-bottom:12px; background:var(--accent);" onclick="initEditor('P')">Portrait Stack</button>
+            <button class="tool" style="width:100%; background:#5856D6;" onclick="initEditor('L')">Landscape Grid</button>
+        </div>
+    </div>
+
+    <div id="screen-editor" class="tab">
+        <div class="hint-bar">RIGHT-CLICK OR LONG-PRESS TO FRONT/BACK</div>
+        <div class="editor-top">
+            <button style="background:none; border:none; color:#8e8e93; font-weight:bold;" onclick="location.reload()">EXIT</button>
+            <button style="background:none; border:none; color:#34C759; font-weight:900; font-size:17px;" onclick="prepExport()">SAVE</button>
+        </div>
+        <div id="canvas-container"><canvas id="cvs"></canvas></div>
+        <div class="dock">
+            <div style="display:flex; gap:10px;">
+                <button class="tool" onclick="reformat('P')">Portrait Reset</button>
+                <button class="tool" onclick="reformat('L')">Landscape Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="ctx-menu">
+        <div class="menu-item" onclick="layerToFront()">Bring to Front <span>⇪</span></div>
+        <div class="menu-item" onclick="layerToBack()">Send to Back <span>⇊</span></div>
+        <div class="menu-item" onclick="deleteItem()">Delete Item</div>
+    </div>
+
+    <div id="export-overlay">
+        <div style="position:absolute; top:20px; right:20px; font-size:30px;" onclick="document.getElementById('export-overlay').style.display='none'">✕</div>
+        <img id="preview-img" src="">
+        <div style="display:flex; width:90%; gap:12px; margin-top:30px;">
+            <button class="tool" style="background:#2c2c2e" onclick="downloadImg()">Download</button>
+            <button class="tool" style="background:var(--accent)" onclick="shareImg()">Share 📤</button>
+        </div>
+    </div>
+
+<script>
+    let rawFiles = [], items = [], selectedIdx = -1, handleIdx = -1;
+    const cvs = document.getElementById('cvs'), ctx = cvs.getContext('2d'), menu = document.getElementById('ctx-menu');
+
+    document.getElementById('fileIn').onchange = (e) => {
+        rawFiles = Array.from(e.target.files);
+        if(rawFiles.length > 0) document.getElementById('nextBtn').style.display = 'block';
+    };
+
+    function showLayout() {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('screen-layout').classList.add('active');
+    }
+
+    function initEditor(mode) {
+        document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+        document.getElementById('screen-editor').classList.add('active');
+        cvs.width = window.innerWidth; cvs.height = window.innerHeight - 220;
+        let loaded = 0; items = [];
+        rawFiles.forEach((file) => {
+            let reader = new FileReader();
+            reader.onload = (ev) => {
+                let img = new Image(); img.src = ev.target.result;
+                img.onload = () => {
+                    items.push({ src:img, x:0, y:0, w:150, h:150 });
+                    if(++loaded === rawFiles.length) reformat(mode);
+                }
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function reformat(mode) {
+        let cols = (mode === 'P') ? 1 : 2;
+        let cellW = cvs.width/cols, cellH = cvs.height/Math.ceil(items.length/cols);
+        items.forEach((itm, i) => {
+            itm.w = cellW - 60; itm.h = cellH - 60;
+            itm.x = (i % cols) * cellW + 30; itm.y = Math.floor(i / cols) * cellH + 30;
+        });
+        selectedIdx = -1; draw();
+    }
+
+    function draw(isExport = false) {
+        ctx.clearRect(0,0,cvs.width,cvs.height);
+        items.forEach((itm, i) => {
+            ctx.drawImage(itm.src, itm.x, itm.y, itm.w, itm.h);
+            if(!isExport && i === selectedIdx) {
+                ctx.strokeStyle = '#007AFF'; ctx.lineWidth = 3; ctx.strokeRect(itm.x, itm.y, itm.w, itm.h);
+                getHandles(itm).forEach(p => {
+                    ctx.fillStyle='white'; ctx.beginPath(); ctx.arc(p.x,p.y,16,0,7); ctx.fill(); ctx.stroke();
+                });
+            }
+        });
+    }
+
+    function getHandles(itm) { return [{x:itm.x,y:itm.y}, {x:itm.x+itm.w,y:itm.y}, {x:itm.x,y:itm.y+itm.h}, {x:itm.x+itm.w,y:itm.y+itm.h}]; }
+
+    cvs.addEventListener('pointerdown', (e) => {
+        menu.style.display = 'none';
+        const r = cvs.getBoundingClientRect(), x = e.clientX-r.left, y = e.clientY-r.top;
+        
+        if(selectedIdx > -1) {
+            handleIdx = getHandles(items[selectedIdx]).findIndex(p => Math.hypot(p.x-x, p.y-y) < 55);
+            if(handleIdx > -1) return;
+        }
+
+        let found = items.findLastIndex(itm => x > itm.x && x < itm.x+itm.w && y > itm.y && y < itm.y+itm.h);
+        if(found > -1) {
+            selectedIdx = found;
+            layerToFront(); // Instant Front on Click
+        } else { selectedIdx = -1; }
+        draw();
+    });
+
+    cvs.addEventListener('contextmenu', (e) => {
+        e.preventDefault();
+        const r = cvs.getBoundingClientRect(), x = e.clientX-r.left, y = e.clientY-r.top;
+        let found = items.findLastIndex(itm => x > itm.x && x < itm.x+itm.w && y > itm.y && y < itm.y+itm.h);
+        if(found > -1) {
+            selectedIdx = found; draw();
+            menu.style.top = e.clientY + 'px'; menu.style.left = e.clientX + 'px';
+            menu.style.display = 'block';
+        }
+    });
+
+    cvs.addEventListener('pointermove', (e) => {
+        if(selectedIdx === -1 || e.buttons !== 1) return;
+        const r = cvs.getBoundingClientRect(), x = e.clientX-r.left, y = e.clientY-r.top;
+        let itm = items[selectedIdx];
+        if(handleIdx === 0) { itm.w += itm.x-x; itm.h += itm.y-y; itm.x=x; itm.y=y; }
+        else if(handleIdx === 1) { itm.w = x-itm.x; itm.h += itm.y-y; itm.y=y; }
+        else if(handleIdx === 2) { itm.w += itm.x-x; itm.x=x; itm.h = y-itm.y; }
+        else if(handleIdx === 3) { itm.w = x-itm.x; itm.h = y-itm.y; }
+        else { itm.x = x-itm.w/2; itm.y = y-itm.h/2; }
+        draw();
+    });
+
+    function layerToFront() {
+        if(selectedIdx === -1) return;
+        let p = items.splice(selectedIdx, 1)[0];
+        items.push(p);
+        selectedIdx = items.length - 1;
+        draw(); menu.style.display = 'none';
+    }
+
+    function layerToBack() {
+        if(selectedIdx === -1) return;
+        let p = items.splice(selectedIdx, 1)[0];
+        items.unshift(p);
+        selectedIdx = 0;
+        draw(); menu.style.display = 'none';
+    }
+
+    function deleteItem() { if(selectedIdx > -1) { items.splice(selectedIdx,1); selectedIdx=-1; draw(); menu.style.display = 'none'; } }
+
+    function prepExport() {
+        selectedIdx = -1; draw(true);
+        document.getElementById('preview-img').src = cvs.toDataURL("image/png");
+        document.getElementById('export-overlay').style.display = 'flex';
+        draw();
+    }
+
+    function downloadImg() { const a = document.createElement('a'); a.download = 'collage.png'; a.href = document.getElementById('preview-img').src; a.click(); }
+    async function shareImg() {
+        const b = await (await fetch(document.getElementById('preview-img').src)).blob();
+        if(navigator.share) await navigator.share({files: [new File([b], 'collage.png', {type:'image/png'})]});
+    }
+</script>
+</body>
+</html>
