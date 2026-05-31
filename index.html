@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
     <title>Collage Studio Pro</title>
     <style>
-        :root { 
-            --ios-blue: #0A84FF; 
-            --glass-bg: rgba(255, 255, 255, 0.08); 
-            --glass-border: rgba(255, 255, 255, 0.15);
+        :root {
+            --ios-blue: #0A84FF;
+            --bg-dark: #020617;
+            --glass-bg: rgba(255, 255, 255, 0.06);
+            --glass-border: rgba(255, 255, 255, 0.1);
             --text-main: #FFFFFF;
-            --text-sub: #8E8E93;
+            --text-muted: #94A3B8;
         }
         
-        /* Universal reset and iOS touch overrides */
         * { 
             box-sizing: border-box; margin: 0; padding: 0;
             -webkit-tap-highlight-color: transparent;
@@ -21,436 +21,444 @@
             -webkit-user-select: none; user-select: none;
         }
 
-        /* Deep Sapphire Geometric Background */
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; 
-            background: radial-gradient(circle at top right, #002250 0%, #000814 60%, #000000 100%);
-            color: var(--text-main); 
+            background-color: var(--bg-dark); color: var(--text-main); 
             height: 100vh; overflow: hidden; display: flex; flex-direction: column;
+            background: linear-gradient(135deg, #0f172a 0%, #020617 100%);
         }
-
-        /* Abstract Background Elements for Depth */
-        .bg-shape {
-            position: absolute; border-radius: 50%; filter: blur(80px); z-index: 0; pointer-events: none;
-        }
-        .shape-1 { top: -10%; left: -10%; width: 300px; height: 300px; background: rgba(10, 132, 255, 0.15); }
-        .shape-2 { bottom: 10%; right: -20%; width: 400px; height: 400px; background: rgba(0, 80, 200, 0.1); }
 
         .view { 
-            display: none; height: 100%; width: 100%; flex-direction: column; 
-            position: absolute; top: 0; left: 0; z-index: 1; 
+            display: none; height: 100%; width: 100%; 
+            flex-direction: column; position: absolute; top: 0; left: 0; z-index: 1; 
         }
-        .view.active { display: flex; animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .view.active { display: flex; animation: viewFade 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        @keyframes viewFade { from { opacity: 0; transform: scale(1.01); } to { opacity: 1; transform: scale(1); } }
 
-        /* Frosted Glass Utility Class */
-        .glass {
-            background: var(--glass-bg);
-            backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px);
-            border: 1px solid var(--glass-border);
+        /* Panels & Cards */
+        .glass-panel {
+            background: var(--glass-bg); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+            border: 1px solid var(--glass-border); padding: 35px 25px; border-radius: 28px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.5); max-width: 420px; width: 90%; margin: auto;
         }
 
-        /* 1. HOME SCREEN */
-        #view-home { justify-content: center; align-items: center; }
-        .home-card {
-            padding: 50px 40px; border-radius: 32px; text-align: center;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5); width: 85%; max-width: 350px;
+        .title { font-size: 34px; font-weight: 800; margin-bottom: 8px; letter-spacing: -0.5px; text-align: center; }
+        .subtitle { color: var(--text-muted); font-size: 15px; margin-bottom: 35px; text-align: center; }
+        
+        .action-btn {
+            background: var(--ios-blue); color: #fff; padding: 16px 32px; border-radius: 20px;
+            font-size: 16px; font-weight: 600; border: none; display: inline-flex; 
+            align-items: center; justify-content: center; gap: 10px; width: 100%;
+            box-shadow: 0 8px 25px rgba(10, 132, 255, 0.25); cursor: pointer;
         }
-        .title { font-size: 28px; font-weight: 800; margin-bottom: 8px; letter-spacing: 0.5px; }
-        .subtitle { color: var(--text-sub); font-size: 15px; margin-bottom: 40px; }
-        .upload-circle-btn {
-            background: var(--ios-blue); color: #fff; width: 120px; height: 120px; 
-            border-radius: 50%; display: inline-flex; flex-direction: column; 
-            justify-content: center; align-items: center; gap: 8px; font-weight: 700; font-size: 14px;
-            box-shadow: 0 10px 30px rgba(10, 132, 255, 0.4); cursor: pointer; transition: transform 0.1s;
-        }
-        .upload-circle-btn:active { transform: scale(0.92); }
-        .plus-icon { font-size: 32px; font-weight: 300; line-height: 1; }
+        .action-btn:active { transform: scale(0.98); background: #0070E0; }
         input[type="file"] { display: none; }
 
-        /* 2. EDITOR SCREEN */
-        .top-bar { 
-            height: 65px; display: flex; justify-content: space-between; align-items: center; 
-            padding: 0 20px; z-index: 10; border-bottom: none; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
+        /* Config Step Options */
+        .config-section { margin-bottom: 24px; text-align: left; }
+        .config-label { font-size: 13px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-bottom: 10px; letter-spacing: 0.5px; }
+        .option-grid { display: flex; gap: 12px; }
+        .opt-card {
+            flex: 1; background: rgba(255,255,255,0.04); border: 1px solid var(--glass-border);
+            padding: 14px; border-radius: 16px; text-align: center; font-size: 14px; font-weight: 600; cursor: pointer;
         }
-        .nav-btn { background: none; border: none; color: var(--ios-blue); font-size: 17px; font-weight: 600; cursor: pointer; }
+        .opt-card.selected { border-color: var(--ios-blue); background: rgba(10, 132, 255, 0.15); }
+
+        /* Navigation Top Bars */
+        .top-bar { 
+            height: 75px; display: flex; justify-content: space-between; align-items: center; 
+            padding: 25px 20px 0; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); 
+            -webkit-backdrop-filter: blur(20px); z-index: 10; border-bottom: 0.5px solid rgba(255,255,255,0.1); 
+        }
+        .nav-cluster { display: flex; gap: 15px; align-items: center; }
+        .nav-btn { background: none; border: none; color: var(--ios-blue); font-size: 16px; font-weight: 600; cursor: pointer; }
         .nav-btn.cancel { color: #FF453A; font-weight: 400; }
         
-        #workspace { flex-grow: 1; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        canvas { touch-action: none; box-shadow: 0 15px 50px rgba(0,0,0,0.8); cursor: pointer; }
+        #workspace { flex-grow: 1; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; background: #070b12; }
+        canvas { touch-action: none; }
 
-        /* Smart Toolbar */
+        /* Control Docks */
         .bottom-bar { 
-            height: 110px; display: flex; justify-content: space-evenly; align-items: flex-start; 
-            padding-top: 20px; border-top-left-radius: 30px; border-top-right-radius: 30px; border-bottom: none; border-left: none; border-right: none;
+            background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px); 
+            border-top: 0.5px solid rgba(255,255,255,0.1); display: flex; justify-content: space-evenly; 
+            align-items: center; padding: 15px 20px calc(15px + env(safe-area-inset-bottom)); min-height: 90px;
         }
         .tool-btn { 
-            background: rgba(255,255,255,0.1); color: white; border: none; padding: 14px 10px; 
-            border-radius: 16px; font-size: 13px; font-weight: 600; display: flex; flex-direction: column; 
-            align-items: center; gap: 6px; flex: 1; margin: 0 6px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer;
+            background: rgba(255,255,255,0.07); color: white; border: 1px solid rgba(255,255,255,0.03); 
+            padding: 12px 8px; border-radius: 14px; font-size: 12px; font-weight: 600; 
+            display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; margin: 0 4px;
         }
-        .tool-btn:active { background: rgba(255,255,255,0.2); }
-        .tool-btn.danger { color: #FF453A; }
-        
-        #edit-controls { display: none; width: 100%; justify-content: space-evenly; padding: 0 10px; }
-        #add-controls { display: flex; width: 100%; justify-content: center; padding: 0 20px; }
-        .wide-btn {
-            background: var(--ios-blue); color: white; padding: 16px; border-radius: 20px;
-            width: 100%; text-align: center; font-weight: 700; font-size: 16px; display: block; cursor: pointer; border: none;
-        }
+        .tool-btn:active { background: rgba(255,255,255,0.14); }
+        .tool-btn.danger { color: #FF453A; background: rgba(255, 69, 58, 0.08); }
 
-        /* 3. SAVE SCREEN OVERLAY */
-        #view-save { z-index: 100; justify-content: center; align-items: center; text-align: center; padding: 20px; }
-        .save-card { padding: 30px 20px; border-radius: 30px; width: 90%; max-width: 400px; }
-        #final-image { 
-            max-width: 100%; max-height: 55vh; border-radius: 12px; margin-bottom: 25px; 
-            pointer-events: auto; -webkit-touch-callout: default; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        .save-instruction { font-size: 22px; font-weight: 800; margin-bottom: 10px; }
-        .save-sub { color: var(--text-sub); font-size: 15px; margin-bottom: 30px; line-height: 1.5; }
-        .close-save { 
-            background: rgba(255,255,255,0.15); color: white; padding: 16px 40px; 
-            border-radius: 30px; border: none; font-weight: 700; font-size: 16px; width: 100%; cursor: pointer;
-        }
+        #edit-controls { display: none; width: 100%; justify-content: space-evenly; }
+        .empty-state-text { color: var(--text-muted); font-size: 14px; font-weight: 500; text-align: center; width: 100%; }
+
+        /* Save Screen Module */
+        #view-save { z-index: 100; background: #000000; justify-content: center; align-items: center; padding: 24px; }
+        #final-image { max-width: 90%; max-height: 60vh; border-radius: 16px; box-shadow: 0 25px 50px rgba(0,0,0,0.7); margin-bottom: 25px; pointer-events: auto; -webkit-touch-callout: default; }
     </style>
 </head>
 <body>
 
-    <div class="bg-shape shape-1"></div>
-    <div class="bg-shape shape-2"></div>
-
     <div id="view-home" class="view active">
-        <div class="home-card glass">
+        <div class="glass-panel">
             <h1 class="title">Collage Studio</h1>
-            <p class="subtitle">Pro editing on your iPhone</p>
-            <label class="upload-circle-btn">
-                <span class="plus-icon">+</span>
-                Pick Photos
+            <p class="subtitle">Select starting photos to begin</p>
+            <label class="action-btn">
+                ✨ Upload Images
                 <input type="file" id="main-upload" accept="image/*" multiple>
             </label>
         </div>
     </div>
 
+    <div id="view-config" class="view">
+        <div class="glass-panel">
+            <h2 style="font-size:22px; font-weight:700; margin-bottom:25px; text-align:center;">Canvas Configurations</h2>
+            
+            <div class="config-section">
+                <div class="config-label">Orientation</div>
+                <div class="option-grid">
+                    <div class="opt-card selected" id="opt-portrait" onclick="setConfig('orientation', 'P')">Portrait</div>
+                    <div class="opt-card" id="opt-landscape" onclick="setConfig('orientation', 'L')">Landscape</div>
+                </div>
+            </div>
+
+            <div class="config-section">
+                <div class="config-label">Base Layout Shape</div>
+                <div class="option-grid">
+                    <div class="opt-card selected" id="opt-rect" onclick="setConfig('shape', 'R')">Rectangle</div>
+                    <div class="opt-card" id="opt-square" onclick="setConfig('shape', 'S')">Square</div>
+                    <div class="opt-card" id="opt-circle" onclick="setConfig('shape', 'C')">Circle</div>
+                </div>
+            </div>
+
+            <button class="action-btn" onclick="buildEditorCanvas()" style="margin-top:15px;">Generate Workspace</button>
+        </div>
+    </div>
+
     <div id="view-editor" class="view">
-        <div class="top-bar glass">
+        <div class="top-bar">
             <button class="nav-btn cancel" onclick="location.reload()">Clear</button>
-            <span style="font-weight:700; font-size:16px;">Editor</span>
-            <button class="nav-btn" onclick="openSaveScreen()">Save</button>
+            <div class="nav-cluster">
+                <label class="nav-btn">
+                    + Image
+                    <input type="file" id="add-more-upload" accept="image/*" multiple>
+                </label>
+                <button class="nav-btn" onclick="promptAddTitle()">+ Title</button>
+            </div>
+            <button class="nav-btn" onclick="openSaveScreen()" style="color:#34C759;">Finish</button>
         </div>
         
         <div id="workspace">
             <canvas id="canvas"></canvas>
         </div>
         
-        <div class="bottom-bar glass">
-            <div id="add-controls">
-                <label class="wide-btn">
-                    + Add More Photos
-                    <input type="file" id="add-more-upload" accept="image/*" multiple hidden>
-                </label>
-            </div>
+        <div class="bottom-bar">
+            <div id="no-selection" class="empty-state-text">Tap any item or image to transform</div>
             <div id="edit-controls">
-                <button class="tool-btn" onclick="moveLayer(1)"><span>⬆️</span> Front</button>
-                <button class="tool-btn" onclick="moveLayer(-1)"><span>⬇️</span> Back</button>
+                <button class="tool-btn" onclick="modifyZIndex(1)"><span>⬆️</span> Front</button>
+                <button class="tool-btn" onclick="modifyZIndex(-1)"><span>⬇️</span> Back</button>
                 <button class="tool-btn danger" onclick="removeSelected()"><span>🗑️</span> Delete</button>
-                <button class="tool-btn" onclick="deselect()" style="background:var(--ios-blue); border-color:var(--ios-blue);">Done</button>
+                <button class="tool-btn" onclick="deselectAll()" style="background:var(--ios-blue); border:none;">Done</button>
             </div>
         </div>
     </div>
 
-    <div id="view-save" class="view" style="background: rgba(0,5,15,0.85); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);">
-        <div class="save-card glass">
-            <h2 class="save-instruction">Image Ready</h2>
-            <p class="save-sub">Long-press the photo below<br>and select <strong>"Save to Photos"</strong>.</p>
-            <img id="final-image" src="" alt="Final Output">
-            <button class="close-save" onclick="closeSaveScreen()">Return to Editor</button>
-        </div>
+    <div id="view-save" class="view">
+        <h2 style="font-size:24px; font-weight:700; margin-bottom:8px;">Ready to Save</h2>
+        <p style="color:var(--text-muted); font-size:15px; margin-bottom:30px; text-align:center; line-height:1.4;">
+            <strong>Long-press the image below</strong><br>and select <strong>"Save to Photos"</strong>.
+        </p>
+        <img id="final-image" src="" alt="Final Collage Output">
+        <button class="action-btn" onclick="closeSaveScreen()" style="background:#2C2C2E; max-width:200px; box-shadow:none;">Edit More</button>
     </div>
 
 <script>
-    const views = { 
-        home: document.getElementById('view-home'), 
-        editor: document.getElementById('view-editor'), 
-        save: document.getElementById('view-save') 
-    };
-    const canvas = document.getElementById('canvas');
-    const ctx = canvas.getContext('2d');
+    const views = { home: document.getElementById('view-home'), config: document.getElementById('view-config'), editor: document.getElementById('view-editor'), save: document.getElementById('view-save') };
+    const canvas = document.getElementById('canvas'), ctx = canvas.getContext('2d');
     
-    let images = [], activeIdx = -1, activeHandle = -1;
-    let isDragging = false;
-    let startX = 0, startY = 0, origX = 0, origY = 0, origW = 0, origH = 0;
+    let rawFiles = [];
+    let canvasConfig = { orientation: 'P', shape: 'R' };
+    let items = [], activeIdx = -1, activeHandle = -1;
+    let isTracking = false, scaleRatio = 1;
+    let startTouchX = 0, startTouchY = 0, initialX = 0, initialY = 0, initialW = 0, initialH = 0;
 
-    // --- FILE UPLOAD LOGIC ---
-    document.getElementById('main-upload').addEventListener('change', handleUpload);
-    document.getElementById('add-more-upload').addEventListener('change', handleUpload);
+    // --- CONFIG ROUTER ---
+    document.getElementById('main-upload').addEventListener('change', (e) => {
+        if(!e.target.files.length) return;
+        rawFiles = Array.from(e.target.files);
+        switchView('config');
+    });
+    document.getElementById('add-more-upload').addEventListener('change', (e) => {
+        if(!e.target.files.length) return;
+        loadFilesIntoStudio(Array.from(e.target.files));
+        e.target.value = '';
+    });
 
-    function handleUpload(e) {
-        if (!e.target.files.length) return;
-        const files = Array.from(e.target.files);
-        let loaded = 0;
+    function setConfig(key, val) {
+        canvasConfig[key] = val;
+        const prefix = key === 'orientation' ? 'opt-' : 'opt-';
+        document.querySelectorAll(`[id^="opt-${key === 'orientation' ? 'portrait' : 'rect'}"], [id^="opt-${key === 'orientation' ? 'landscape' : 'square'}"], #opt-circle`).forEach(el => {
+            if((val === 'P' && el.id === 'opt-portrait') || (val === 'L' && el.id === 'opt-landscape') ||
+               (val === 'R' && el.id === 'opt-rect') || (val === 'S' && el.id === 'opt-square') || (val === 'C' && el.id === 'opt-circle')) {
+                el.classList.add('selected');
+            } else if ((key === 'orientation' && (el.id === 'opt-portrait' || el.id === 'opt-landscape')) || (key === 'shape' && (el.id === 'opt-rect' || el.id === 'opt-square' || el.id === 'opt-circle'))) {
+                el.classList.remove('selected');
+            }
+        });
+    }
+
+    // --- CANVAS CONFIGURATION ENGINE ---
+    function buildEditorCanvas() {
+        switchView('editor');
+        const workspaceRect = document.getElementById('workspace').getBoundingClientRect();
         
-        // Transition to editor
-        if(views.home.classList.contains('active')) {
-            switchView('editor');
-            const rect = document.getElementById('workspace').getBoundingClientRect();
-            canvas.width = rect.width; 
-            canvas.height = rect.height;
+        let targetW = workspaceRect.width - 30;
+        let targetH = workspaceRect.height - 30;
+
+        if (canvasConfig.shape === 'S' || canvasConfig.shape === 'C') {
+            const min = Math.min(targetW, targetH);
+            targetW = min; targetH = min;
+        } else {
+            if (canvasConfig.orientation === 'P' && targetW > targetH) targetW = targetH * 0.75;
+            if (canvasConfig.orientation === 'L' && targetH > targetW) targetH = targetW * 0.75;
         }
 
-        files.forEach((file, index) => {
+        scaleRatio = window.devicePixelRatio || 1;
+        canvas.style.width = targetW + 'px';
+        canvas.style.height = targetH + 'px';
+        canvas.width = targetW * scaleRatio;
+        canvas.height = targetH * scaleRatio;
+
+        loadFilesIntoStudio(rawFiles, true);
+    }
+
+    function loadFilesIntoStudio(files, initialArrange = false) {
+        let loaded = 0;
+        files.forEach(file => {
             const reader = new FileReader();
             reader.onload = (event) => {
                 const img = new Image();
                 img.onload = () => {
-                    const size = Math.min(canvas.width, canvas.height) * 0.5;
+                    const baseDim = Math.min(canvas.width, canvas.height) * 0.35;
                     const aspect = img.width / img.height;
-                    let w = size, h = size;
+                    let w = baseDim, h = baseDim;
                     if(aspect > 1) h = w / aspect; else w = h * aspect;
-                    
-                    const offset = (images.length * 15) % 60;
-                    images.push({ 
-                        img: img, 
-                        x: (canvas.width - w) / 2 + offset, 
-                        y: (canvas.height - h) / 2 + offset, 
-                        w: w, h: h 
+
+                    items.push({
+                        type: 'image', img: img, aspect: aspect,
+                        x: (canvas.width - w) / 2 + (loaded * 30), y: (canvas.height - h) / 2 + (loaded * 30),
+                        w: w, h: h
                     });
-                    
                     loaded++;
-                    if(loaded === files.length) { 
-                        activeIdx = images.length - 1;
-                        updateToolbar(); 
-                        draw(); 
+                    if(loaded === files.length) {
+                        if(initialArrange) autoDistributeItems();
+                        activeIdx = items.length - 1;
+                        refreshState();
                     }
                 };
                 img.src = event.target.result;
             };
             reader.readAsDataURL(file);
         });
-        e.target.value = '';
     }
 
-    // --- 8-SIDED HANDLE MATH ---
+    function promptAddTitle() {
+        const text = prompt("Enter Title Text:");
+        if (!text) return;
+        ctx.font = `bold ${40 * scaleRatio}px -apple-system`;
+        const metrics = ctx.measureText(text);
+        const w = metrics.width + (30 * scaleRatio);
+        const h = (60 * scaleRatio);
+
+        items.push({
+            type: 'text', text: text,
+            x: (canvas.width - w) / 2, y: (canvas.height - h) / 2,
+            w: w, h: h
+        });
+        activeIdx = items.length - 1;
+        refreshState();
+    }
+
+    function autoDistributeItems() {
+        const count = items.length;
+        const cols = Math.ceil(Math.sqrt(count));
+        const rows = Math.ceil(count / cols);
+        const cellW = canvas.width / cols;
+        const cellH = canvas.height / rows;
+
+        items.forEach((item, idx) => {
+            const c = idx % cols;
+            const r = Math.floor(idx / cols);
+            const targetX = c * cellW + (cellW - item.w) / 2;
+            const targetY = r * cellH + (cellH - item.h) / 2;
+            item.x = Math.max(10, Math.min(targetX, canvas.width - item.w - 10));
+            item.y = Math.max(10, Math.min(targetY, canvas.height - item.h - 10));
+        });
+    }
+
+    // --- 8-POINT MATRIX CONFIGURATION ---
     function getHandles(it) {
-        const hw = it.w / 2, hh = it.h / 2;
+        const mx = it.x + it.w / 2, my = it.y + it.h / 2, rx = it.x + it.w, by = it.y + it.h;
         return [
-            {x: it.x, y: it.y},               // Top-Left
-            {x: it.x + hw, y: it.y},          // Top-Center
-            {x: it.x + it.w, y: it.y},        // Top-Right
-            {x: it.x + it.w, y: it.y + hh},   // Right-Center
-            {x: it.x + it.w, y: it.y + it.h}, // Bottom-Right
-            {x: it.x + hw, y: it.y + it.h},   // Bottom-Center
-            {x: it.x, y: it.y + it.h},        // Bottom-Left
-            {x: it.x, y: it.y + hh}           // Left-Center
+            {x: it.x, y: it.y}, {x: mx, y: it.y}, {x: rx, y: it.y},
+            {x: rx, y: my}, {x: rx, y: by}, {x: mx, y: by},
+            {x: it.x, y: by}, {x: it.x, y: my}
         ];
     }
 
-    // --- DRAWING ENGINE ---
-    function draw(forExport = false) {
-        ctx.fillStyle = '#000814';
+    // --- RETINA GRAPHICS PIPELINE ---
+    function refreshState() {
+        ctx.save();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Clip constraints if Circle shape config active
+        if (canvasConfig.shape === 'C') {
+            ctx.beginPath();
+            ctx.arc(canvas.width/2, canvas.height/2, canvas.width/2, 0, Math.PI*2);
+            ctx.clip();
+        }
+
+        ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        
-        for (let i = 0; i < images.length; i++) {
-            const it = images[i];
-            ctx.drawImage(it.img, it.x, it.y, it.w, it.h);
+
+        items.forEach((item, index) => {
+            if (item.type === 'image') {
+                ctx.drawImage(item.img, item.x, item.y, item.w, item.h);
+            } else if (item.type === 'text') {
+                ctx.save();
+                ctx.fillStyle = '#000000';
+                ctx.shadowColor = 'rgba(0,0,0,0.15)';
+                ctx.shadowBlur = 8 * scaleRatio;
+                ctx.font = `bold ${item.h * 0.65}px -apple-system`;
+                ctx.textBaseline = 'middle';
+                ctx.fillText(item.text, item.x + (15 * scaleRatio), item.y + (item.h / 2));
+                ctx.restore();
+            }
             
-            if (i === activeIdx && !forExport) {
-                ctx.strokeStyle = 'rgba(10, 132, 255, 0.6)';
-                ctx.lineWidth = 2;
-                ctx.strokeRect(it.x, it.y, it.w, it.h);
-                
-                const handles = getHandles(it);
-                handles.forEach((h, idx) => {
-                    ctx.fillStyle = idx === activeHandle ? '#FF453A' : '#0A84FF';
-                    ctx.fillRect(h.x - 6, h.y - 6, 12, 12);
+            if (index === activeIdx) {
+                ctx.strokeStyle = '#0A84FF'; ctx.lineWidth = 2 * scaleRatio;
+                ctx.strokeRect(item.x, item.y, item.w, item.h);
+                const nodes = getHandles(item);
+                nodes.forEach(node => {
+                    ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = '#0A84FF'; ctx.lineWidth = 2 * scaleRatio;
+                    ctx.beginPath(); ctx.arc(node.x, node.y, 6 * scaleRatio, 0, Math.PI * 2);
+                    ctx.fill(); ctx.stroke();
                 });
             }
-        }
+        });
+        ctx.restore();
+
+        document.getElementById('no-selection').style.display = activeIdx === -1 ? 'block' : 'none';
+        document.getElementById('edit-controls').style.display = activeIdx === -1 ? 'none' : 'flex';
     }
 
-    // --- CANVAS INTERACTIONS ---
-    const rect = canvas.getBoundingClientRect();
-    
-    canvas.addEventListener('mousedown', startDrag);
-    canvas.addEventListener('mousemove', moveDrag);
-    canvas.addEventListener('mouseup', endDrag);
-    canvas.addEventListener('mouseleave', endDrag);
-    
-    canvas.addEventListener('touchstart', startDrag);
-    canvas.addEventListener('touchmove', moveDrag);
-    canvas.addEventListener('touchend', endDrag);
-
-    function getCanvasCoords(e) {
-        const clientX = e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
-        const clientY = e.clientY !== undefined ? e.clientY : e.touches[0].clientY;
-        return {
-            x: clientX - rect.left,
-            y: clientY - rect.top
-        };
-    }
-
-    function startDrag(e) {
-        if (activeIdx === -1) return;
-        const coords = getCanvasCoords(e);
-        startX = coords.x;
-        startY = coords.y;
-        
-        const it = images[activeIdx];
-        const handles = getHandles(it);
-        
+    // --- MATHEMATICAL TRANSLATION OPERATIONS ---
+    canvas.addEventListener('pointerdown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const touchX = (e.clientX - rect.left) * scaleRatio;
+        const touchY = (e.clientY - rect.top) * scaleRatio;
         activeHandle = -1;
-        for (let i = 0; i < handles.length; i++) {
-            const dist = Math.sqrt(Math.pow(handles[i].x - startX, 2) + Math.pow(handles[i].y - startY, 2));
-            if (dist < 15) {
-                activeHandle = i;
-                break;
+
+        if (activeIdx !== -1) {
+            const handles = getHandles(items[activeIdx]);
+            const hitBox = 24 * scaleRatio;
+            for (let i = 0; i < handles.length; i++) {
+                if (Math.hypot(touchX - handles[i].x, touchY - handles[i].y) < hitBox) {
+                    activeHandle = i; break;
+                }
             }
         }
-        
-        if (activeHandle === -1 && startX >= it.x && startX <= it.x + it.w && startY >= it.y && startY <= it.y + it.h) {
-            activeHandle = -2; // Moving
+
+        if (activeHandle === -1) {
+            let foundIdx = -1;
+            for (let i = items.length - 1; i >= 0; i--) {
+                const it = items[i];
+                if (touchX >= it.x && touchX <= it.x + it.w && touchY >= it.y && touchY <= it.y + it.h) {
+                    foundIdx = i; break;
+                }
+            }
+            activeIdx = foundIdx;
         }
-        
-        if (activeHandle !== -1) {
-            origX = it.x;
-            origY = it.y;
-            origW = it.w;
-            origH = it.h;
-            isDragging = true;
-            e.preventDefault();
-        } else {
-            deselect();
+
+        if (activeIdx !== -1) {
+            isTracking = true; startTouchX = touchX; startTouchY = touchY;
+            const it = items[activeIdx];
+            initialX = it.x; initialY = it.y; initialW = it.w; initialH = it.h;
         }
-    }
-
-    function moveDrag(e) {
-        if (!isDragging || activeIdx === -1) return;
-        const coords = getCanvasCoords(e);
-        const dx = coords.x - startX;
-        const dy = coords.y - startY;
-        const it = images[activeIdx];
-        
-        if (activeHandle === -2) {
-            it.x = origX + dx;
-            it.y = origY + dy;
-        } else if (activeHandle === 0) {
-            it.x = origX + dx;
-            it.y = origY + dy;
-            it.w = origW - dx;
-            it.h = origH - dy;
-        } else if (activeHandle === 1) {
-            it.y = origY + dy;
-            it.h = origH - dy;
-        } else if (activeHandle === 2) {
-            it.y = origY + dy;
-            it.w = origW + dx;
-            it.h = origH - dy;
-        } else if (activeHandle === 3) {
-            it.w = origW + dx;
-        } else if (activeHandle === 4) {
-            it.w = origW + dx;
-            it.h = origH + dy;
-        } else if (activeHandle === 5) {
-            it.h = origH + dy;
-        } else if (activeHandle === 6) {
-            it.x = origX + dx;
-            it.w = origW - dx;
-            it.h = origH + dy;
-        } else if (activeHandle === 7) {
-            it.x = origX + dx;
-            it.w = origW - dx;
-        }
-        
-        if (it.w < 30) it.w = 30;
-        if (it.h < 30) it.h = 30;
-        
-        draw();
-        e.preventDefault();
-    }
-
-    function endDrag(e) {
-        isDragging = false;
-    }
-
-    // --- LAYER MANAGEMENT ---
-    function moveLayer(direction) {
-        if (activeIdx === -1) return;
-        if (direction > 0 && activeIdx < images.length - 1) {
-            [images[activeIdx], images[activeIdx + 1]] = [images[activeIdx + 1], images[activeIdx]];
-            activeIdx++;
-        } else if (direction < 0 && activeIdx > 0) {
-            [images[activeIdx], images[activeIdx - 1]] = [images[activeIdx - 1], images[activeIdx]];
-            activeIdx--;
-        }
-        draw();
-    }
-
-    function removeSelected() {
-        if (activeIdx === -1) return;
-        images.splice(activeIdx, 1);
-        activeIdx = -1;
-        activeHandle = -1;
-        updateToolbar();
-        draw();
-    }
-
-    function deselect() {
-        activeIdx = -1;
-        activeHandle = -1;
-        updateToolbar();
-        draw();
-    }
-
-    // --- UI MANAGEMENT ---
-    function switchView(viewName) {
-        Object.values(views).forEach(v => v.classList.remove('active'));
-        views[viewName].classList.add('active');
-    }
-
-    function updateToolbar() {
-        const editControls = document.getElementById('edit-controls');
-        const addControls = document.getElementById('add-controls');
-        
-        if (activeIdx === -1) {
-            editControls.style.display = 'none';
-            addControls.style.display = 'flex';
-        } else {
-            editControls.style.display = 'flex';
-            addControls.style.display = 'none';
-        }
-    }
-
-    function openSaveScreen() {
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = canvas.width;
-        tempCanvas.height = canvas.height;
-        const tempCtx = tempCanvas.getContext('2d');
-        
-        tempCtx.fillStyle = '#000814';
-        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
-        
-        for (let i = 0; i < images.length; i++) {
-            const it = images[i];
-            tempCtx.drawImage(it.img, it.x, it.y, it.w, it.h);
-        }
-        
-        document.getElementById('final-image').src = tempCanvas.toDataURL();
-        switchView('save');
-    }
-
-    function closeSaveScreen() {
-        switchView('editor');
-        draw();
-    }
-
-    // Initialize
-    window.addEventListener('resize', () => {
-        if (views.editor.classList.contains('active')) {
-            const rect = document.getElementById('workspace').getBoundingClientRect();
-            canvas.width = rect.width;
-            canvas.height = rect.height;
-            draw();
-        }
+        refreshState();
     });
+
+    canvas.addEventListener('pointermove', (e) => {
+        if (!isTracking || activeIdx === -1) return;
+        const rect = canvas.getBoundingClientRect();
+        const touchX = (e.clientX - rect.left) * scaleRatio;
+        const touchY = (e.clientY - rect.top) * scaleRatio;
+        
+        let dx = touchX - startTouchX;
+        let dy = touchY - startTouchY;
+        const it = items[activeIdx];
+
+        if (activeHandle !== -1) {
+            // Aspect-Ratio Constrained Resizing for Images
+            if (it.type === 'image') {
+                if ([0, 2, 4, 6].includes(activeHandle)) {
+                    if (activeHandle === 4 || activeHandle === 2) dy = dx / it.aspect;
+                    else dy = dx * it.aspect;
+                }
+            }
+
+            if (activeHandle === 0) { it.x = initialX + dx; it.y = initialY + dy; it.w = initialW - dx; it.h = initialH - dy; }
+            else if (activeHandle === 1) { it.y = initialY + dy; it.h = initialH - dy; }
+            else if (activeHandle === 2) { it.y = initialY + dy; it.w = initialW + dx; it.h = initialH - dy; }
+            else if (activeHandle === 3) { it.w = initialW + dx; }
+            else if (activeHandle === 4) { it.w = initialW + dx; it.h = initialH + dy; }
+            else if (activeHandle === 5) { it.h = initialH + dy; }
+            else if (activeHandle === 6) { it.x = initialX + dx; it.w = initialW - dx; it.h = initialH + dy; }
+            else if (activeHandle === 7) { it.x = initialX + dx; it.w = initialW - dx; }
+
+            const minDim = 30 * scaleRatio;
+            if (it.w < minDim) { it.w = minDim; if([0,6,7].includes(activeHandle)) it.x = initialX + initialW - minDim; }
+            if (it.h < minDim) { it.h = minDim; if([0,1,2].includes(activeHandle)) it.y = initialY + initialH - minDim; }
+        } else {
+            it.x = initialX + dx;
+            it.y = initialY + dy;
+        }
+        refreshState();
+    });
+
+    window.addEventListener('pointerup', () => { isTracking = false; });
+
+    // --- STRUCTURAL LAYER MANAGEMENT ---
+    function deselectAll() { activeIdx = -1; refreshState(); }
+    function removeSelected() { if(activeIdx !== -1) { items.splice(activeIdx, 1); activeIdx = -1; refreshState(); } }
+    
+    function modifyZIndex(dir) {
+        if (activeIdx === -1) return;
+        if (dir === 1 && activeIdx < items.length - 1) {
+            items.push(items.splice(activeIdx, 1)[0]); activeIdx = items.length - 1;
+        } else if (dir === -1 && activeIdx > 0) {
+            items.unshift(items.splice(activeIdx, 1)[0]); activeIdx = 0;
+        }
+        refreshState();
+    }
+
+    function switchView(key) {
+        Object.values(views).forEach(v => v.classList.remove('active'));
+        views[key].classList.add('active');
+    }
+
+    // --- HIGH-RES JPEG CONVERSION EXPORT ---
+    function openSaveScreen() {
+        if (!items.length) return alert("Canvas empty!");
+        const prev = activeIdx; activeIdx = -1; refreshState();
+        
+        document.getElementById('final-image').src = canvas.toDataURL('image/jpeg', 0.95);
+        switchView('save');
+        activeIdx = prev;
+    }
+    function closeSaveScreen() { switchView('editor'); refreshState(); }
 </script>
 </body>
 </html>
