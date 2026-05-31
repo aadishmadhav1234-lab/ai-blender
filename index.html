@@ -73,11 +73,11 @@
             height: 65px; display: flex; justify-content: space-between; align-items: center; 
             padding: 0 20px; z-index: 10; border-bottom: none; border-bottom-left-radius: 20px; border-bottom-right-radius: 20px;
         }
-        .nav-btn { background: none; border: none; color: var(--ios-blue); font-size: 17px; font-weight: 600; }
+        .nav-btn { background: none; border: none; color: var(--ios-blue); font-size: 17px; font-weight: 600; cursor: pointer; }
         .nav-btn.cancel { color: #FF453A; font-weight: 400; }
         
         #workspace { flex-grow: 1; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        canvas { touch-action: none; box-shadow: 0 15px 50px rgba(0,0,0,0.8); }
+        canvas { touch-action: none; box-shadow: 0 15px 50px rgba(0,0,0,0.8); cursor: pointer; }
 
         /* Smart Toolbar */
         .bottom-bar { 
@@ -87,7 +87,7 @@
         .tool-btn { 
             background: rgba(255,255,255,0.1); color: white; border: none; padding: 14px 10px; 
             border-radius: 16px; font-size: 13px; font-weight: 600; display: flex; flex-direction: column; 
-            align-items: center; gap: 6px; flex: 1; margin: 0 6px; border: 1px solid rgba(255,255,255,0.05);
+            align-items: center; gap: 6px; flex: 1; margin: 0 6px; border: 1px solid rgba(255,255,255,0.05); cursor: pointer;
         }
         .tool-btn:active { background: rgba(255,255,255,0.2); }
         .tool-btn.danger { color: #FF453A; }
@@ -96,7 +96,7 @@
         #add-controls { display: flex; width: 100%; justify-content: center; padding: 0 20px; }
         .wide-btn {
             background: var(--ios-blue); color: white; padding: 16px; border-radius: 20px;
-            width: 100%; text-align: center; font-weight: 700; font-size: 16px; display: block;
+            width: 100%; text-align: center; font-weight: 700; font-size: 16px; display: block; cursor: pointer; border: none;
         }
 
         /* 3. SAVE SCREEN OVERLAY */
@@ -110,7 +110,7 @@
         .save-sub { color: var(--text-sub); font-size: 15px; margin-bottom: 30px; line-height: 1.5; }
         .close-save { 
             background: rgba(255,255,255,0.15); color: white; padding: 16px 40px; 
-            border-radius: 30px; border: none; font-weight: 700; font-size: 16px; width: 100%;
+            border-radius: 30px; border: none; font-weight: 700; font-size: 16px; width: 100%; cursor: pointer;
         }
     </style>
 </head>
@@ -193,7 +193,6 @@
         if(views.home.classList.contains('active')) {
             switchView('editor');
             const rect = document.getElementById('workspace').getBoundingClientRect();
-            // Set canvas resolution strictly for workspace area
             canvas.width = rect.width; 
             canvas.height = rect.height;
         }
@@ -203,13 +202,11 @@
             reader.onload = (event) => {
                 const img = new Image();
                 img.onload = () => {
-                    // Smart auto-sizing to fit iPhone screen
                     const size = Math.min(canvas.width, canvas.height) * 0.5;
                     const aspect = img.width / img.height;
                     let w = size, h = size;
                     if(aspect > 1) h = w / aspect; else w = h * aspect;
                     
-                    // Stagger initial positions slightly
                     const offset = (images.length * 15) % 60;
                     images.push({ 
                         img: img, 
@@ -220,7 +217,7 @@
                     
                     loaded++;
                     if(loaded === files.length) { 
-                        activeIdx = images.length - 1; // Select newest
+                        activeIdx = images.length - 1;
                         updateToolbar(); 
                         draw(); 
                     }
@@ -229,7 +226,7 @@
             };
             reader.readAsDataURL(file);
         });
-        e.target.value = ''; // Reset input to allow re-uploading same file
+        e.target.value = '';
     }
 
     // --- 8-SIDED HANDLE MATH ---
@@ -249,4 +246,211 @@
 
     // --- DRAWING ENGINE ---
     function draw(forExport = false) {
-        // Clear
+        ctx.fillStyle = '#000814';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        for (let i = 0; i < images.length; i++) {
+            const it = images[i];
+            ctx.drawImage(it.img, it.x, it.y, it.w, it.h);
+            
+            if (i === activeIdx && !forExport) {
+                ctx.strokeStyle = 'rgba(10, 132, 255, 0.6)';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(it.x, it.y, it.w, it.h);
+                
+                const handles = getHandles(it);
+                handles.forEach((h, idx) => {
+                    ctx.fillStyle = idx === activeHandle ? '#FF453A' : '#0A84FF';
+                    ctx.fillRect(h.x - 6, h.y - 6, 12, 12);
+                });
+            }
+        }
+    }
+
+    // --- CANVAS INTERACTIONS ---
+    const rect = canvas.getBoundingClientRect();
+    
+    canvas.addEventListener('mousedown', startDrag);
+    canvas.addEventListener('mousemove', moveDrag);
+    canvas.addEventListener('mouseup', endDrag);
+    canvas.addEventListener('mouseleave', endDrag);
+    
+    canvas.addEventListener('touchstart', startDrag);
+    canvas.addEventListener('touchmove', moveDrag);
+    canvas.addEventListener('touchend', endDrag);
+
+    function getCanvasCoords(e) {
+        const clientX = e.clientX !== undefined ? e.clientX : e.touches[0].clientX;
+        const clientY = e.clientY !== undefined ? e.clientY : e.touches[0].clientY;
+        return {
+            x: clientX - rect.left,
+            y: clientY - rect.top
+        };
+    }
+
+    function startDrag(e) {
+        if (activeIdx === -1) return;
+        const coords = getCanvasCoords(e);
+        startX = coords.x;
+        startY = coords.y;
+        
+        const it = images[activeIdx];
+        const handles = getHandles(it);
+        
+        activeHandle = -1;
+        for (let i = 0; i < handles.length; i++) {
+            const dist = Math.sqrt(Math.pow(handles[i].x - startX, 2) + Math.pow(handles[i].y - startY, 2));
+            if (dist < 15) {
+                activeHandle = i;
+                break;
+            }
+        }
+        
+        if (activeHandle === -1 && startX >= it.x && startX <= it.x + it.w && startY >= it.y && startY <= it.y + it.h) {
+            activeHandle = -2; // Moving
+        }
+        
+        if (activeHandle !== -1) {
+            origX = it.x;
+            origY = it.y;
+            origW = it.w;
+            origH = it.h;
+            isDragging = true;
+            e.preventDefault();
+        } else {
+            deselect();
+        }
+    }
+
+    function moveDrag(e) {
+        if (!isDragging || activeIdx === -1) return;
+        const coords = getCanvasCoords(e);
+        const dx = coords.x - startX;
+        const dy = coords.y - startY;
+        const it = images[activeIdx];
+        
+        if (activeHandle === -2) {
+            it.x = origX + dx;
+            it.y = origY + dy;
+        } else if (activeHandle === 0) {
+            it.x = origX + dx;
+            it.y = origY + dy;
+            it.w = origW - dx;
+            it.h = origH - dy;
+        } else if (activeHandle === 1) {
+            it.y = origY + dy;
+            it.h = origH - dy;
+        } else if (activeHandle === 2) {
+            it.y = origY + dy;
+            it.w = origW + dx;
+            it.h = origH - dy;
+        } else if (activeHandle === 3) {
+            it.w = origW + dx;
+        } else if (activeHandle === 4) {
+            it.w = origW + dx;
+            it.h = origH + dy;
+        } else if (activeHandle === 5) {
+            it.h = origH + dy;
+        } else if (activeHandle === 6) {
+            it.x = origX + dx;
+            it.w = origW - dx;
+            it.h = origH + dy;
+        } else if (activeHandle === 7) {
+            it.x = origX + dx;
+            it.w = origW - dx;
+        }
+        
+        if (it.w < 30) it.w = 30;
+        if (it.h < 30) it.h = 30;
+        
+        draw();
+        e.preventDefault();
+    }
+
+    function endDrag(e) {
+        isDragging = false;
+    }
+
+    // --- LAYER MANAGEMENT ---
+    function moveLayer(direction) {
+        if (activeIdx === -1) return;
+        if (direction > 0 && activeIdx < images.length - 1) {
+            [images[activeIdx], images[activeIdx + 1]] = [images[activeIdx + 1], images[activeIdx]];
+            activeIdx++;
+        } else if (direction < 0 && activeIdx > 0) {
+            [images[activeIdx], images[activeIdx - 1]] = [images[activeIdx - 1], images[activeIdx]];
+            activeIdx--;
+        }
+        draw();
+    }
+
+    function removeSelected() {
+        if (activeIdx === -1) return;
+        images.splice(activeIdx, 1);
+        activeIdx = -1;
+        activeHandle = -1;
+        updateToolbar();
+        draw();
+    }
+
+    function deselect() {
+        activeIdx = -1;
+        activeHandle = -1;
+        updateToolbar();
+        draw();
+    }
+
+    // --- UI MANAGEMENT ---
+    function switchView(viewName) {
+        Object.values(views).forEach(v => v.classList.remove('active'));
+        views[viewName].classList.add('active');
+    }
+
+    function updateToolbar() {
+        const editControls = document.getElementById('edit-controls');
+        const addControls = document.getElementById('add-controls');
+        
+        if (activeIdx === -1) {
+            editControls.style.display = 'none';
+            addControls.style.display = 'flex';
+        } else {
+            editControls.style.display = 'flex';
+            addControls.style.display = 'none';
+        }
+    }
+
+    function openSaveScreen() {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const tempCtx = tempCanvas.getContext('2d');
+        
+        tempCtx.fillStyle = '#000814';
+        tempCtx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        
+        for (let i = 0; i < images.length; i++) {
+            const it = images[i];
+            tempCtx.drawImage(it.img, it.x, it.y, it.w, it.h);
+        }
+        
+        document.getElementById('final-image').src = tempCanvas.toDataURL();
+        switchView('save');
+    }
+
+    function closeSaveScreen() {
+        switchView('editor');
+        draw();
+    }
+
+    // Initialize
+    window.addEventListener('resize', () => {
+        if (views.editor.classList.contains('active')) {
+            const rect = document.getElementById('workspace').getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            draw();
+        }
+    });
+</script>
+</body>
+</html>
