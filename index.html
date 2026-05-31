@@ -74,8 +74,17 @@
         .nav-btn { background: none; border: none; color: var(--ios-blue); font-size: 16px; font-weight: 600; cursor: pointer; }
         .nav-btn.cancel { color: #FF453A; font-weight: 400; }
         
-        #workspace { flex-grow: 1; position: relative; display: flex; justify-content: center; align-items: center; overflow: hidden; background: #070b12; }
-        canvas { touch-action: none; }
+        #workspace { 
+            flex-grow: 1; position: relative; display: flex; 
+            justify-content: center; align-items: center; overflow: hidden; background: transparent; 
+        }
+        
+        /* New Canvas Styling for depth */
+        canvas { 
+            touch-action: none; 
+            border-radius: 12px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.1);
+        }
 
         /* Control Docks */
         .bottom-bar { 
@@ -198,7 +207,6 @@
 
     function setConfig(key, val) {
         canvasConfig[key] = val;
-        const prefix = key === 'orientation' ? 'opt-' : 'opt-';
         document.querySelectorAll(`[id^="opt-${key === 'orientation' ? 'portrait' : 'rect'}"], [id^="opt-${key === 'orientation' ? 'landscape' : 'square'}"], #opt-circle`).forEach(el => {
             if((val === 'P' && el.id === 'opt-portrait') || (val === 'L' && el.id === 'opt-landscape') ||
                (val === 'R' && el.id === 'opt-rect') || (val === 'S' && el.id === 'opt-square') || (val === 'C' && el.id === 'opt-circle')) {
@@ -214,8 +222,9 @@
         switchView('editor');
         const workspaceRect = document.getElementById('workspace').getBoundingClientRect();
         
-        let targetW = workspaceRect.width - 30;
-        let targetH = workspaceRect.height - 30;
+        // REDUCED CANVAS BOUNDARY: Now uses 85% of available space so it has a nice margin
+        let targetW = workspaceRect.width * 0.85; 
+        let targetH = workspaceRect.height * 0.85;
 
         if (canvasConfig.shape === 'S' || canvasConfig.shape === 'C') {
             const min = Math.min(targetW, targetH);
@@ -228,6 +237,11 @@
         scaleRatio = window.devicePixelRatio || 1;
         canvas.style.width = targetW + 'px';
         canvas.style.height = targetH + 'px';
+        
+        // If circle shape, apply CSS rounding to canvas tag as well for clean UI
+        if(canvasConfig.shape === 'C') canvas.style.borderRadius = '50%';
+        else canvas.style.borderRadius = '12px';
+
         canvas.width = targetW * scaleRatio;
         canvas.height = targetH * scaleRatio;
 
@@ -241,7 +255,8 @@
             reader.onload = (event) => {
                 const img = new Image();
                 img.onload = () => {
-                    const baseDim = Math.min(canvas.width, canvas.height) * 0.35;
+                    // INCREASED IMAGE SIZING: Multiplier raised from 0.35 to 0.65
+                    const baseDim = Math.min(canvas.width, canvas.height) * 0.65;
                     const aspect = img.width / img.height;
                     let w = baseDim, h = baseDim;
                     if(aspect > 1) h = w / aspect; else w = h * aspect;
@@ -329,8 +344,8 @@
             } else if (item.type === 'text') {
                 ctx.save();
                 ctx.fillStyle = '#000000';
-                ctx.shadowColor = 'rgba(0,0,0,0.15)';
-                ctx.shadowBlur = 8 * scaleRatio;
+                ctx.shadowColor = 'rgba(255,255,255,0.8)';
+                ctx.shadowBlur = 10 * scaleRatio;
                 ctx.font = `bold ${item.h * 0.65}px -apple-system`;
                 ctx.textBaseline = 'middle';
                 ctx.fillText(item.text, item.x + (15 * scaleRatio), item.y + (item.h / 2));
@@ -343,7 +358,7 @@
                 const nodes = getHandles(item);
                 nodes.forEach(node => {
                     ctx.fillStyle = '#FFFFFF'; ctx.strokeStyle = '#0A84FF'; ctx.lineWidth = 2 * scaleRatio;
-                    ctx.beginPath(); ctx.arc(node.x, node.y, 6 * scaleRatio, 0, Math.PI * 2);
+                    ctx.beginPath(); ctx.arc(node.x, node.y, 7 * scaleRatio, 0, Math.PI * 2);
                     ctx.fill(); ctx.stroke();
                 });
             }
